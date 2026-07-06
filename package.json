@@ -1,0 +1,30 @@
+{
+  "name": "visuals.co",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "client/**/*.{js,jsx}": [
+      "cd client && npm run lint",
+      "cd client && npm run format"
+    ],
+    "server/**/*.js": [
+      "cd server && npm run lint",
+      "cd server && npm run format"
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8"
+  }
+}

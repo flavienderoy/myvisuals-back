@@ -1,0 +1,30 @@
+# ================================
+# Visuals.co — Docker Compose (dev local)
+# ================================
+# Usage: docker-compose up
+# Starts the backend API in a container
+# Frontend is run separately via `cd client && npm run dev`
+
+services:
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: visuals-api
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=development
+      - PORT=5001
+      - CLIENT_URL=http://localhost:5173
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    env_file:
+      - ./server/.env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
