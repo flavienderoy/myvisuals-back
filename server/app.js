@@ -29,23 +29,6 @@ const swaggerSpecs = require('./swaggerOptions');
 
 const app = express();
 
-// Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
-
-// ─── Security Middleware ───────────────────────────────
-// Helmet: sets various HTTP headers for security (XSS, CSP, HSTS, etc.)
-app.use(helmet());
-
-// Rate Limiting: protect against brute-force and DDoS
-const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // max 100 requests per windowMs per IP
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-    message: { error: 'Too many requests, please try again later.' },
-});
-app.use('/api/', apiLimiter);
-
 // ─── General Middleware ────────────────────────────────
 app.use(cors({
     origin: [
@@ -57,6 +40,26 @@ app.use(cors({
     credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
+
+// Swagger Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+
+// ─── Security Middleware ───────────────────────────────
+// Helmet: sets various HTTP headers for security (XSS, CSP, HSTS, etc.)
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
+// Rate Limiting: protect against brute-force and DDoS
+// In a real production app, consider higher limits for dashboard users or disabling for local dev.
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: process.env.NODE_ENV === 'development' ? 5000 : 500, // max 500 requests per windowMs per IP (5000 in dev)
+    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    message: { error: 'Too many requests, please try again later.' },
+});
+app.use('/api/', apiLimiter);
 
 // Only enable morgan logging when not in test mode
 if (process.env.NODE_ENV !== 'test') {
