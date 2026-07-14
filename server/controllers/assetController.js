@@ -1,25 +1,28 @@
 const supabase = require('../config/supabase');
-const path = require('path');
+const { toWebp } = require('../utils/imageProcessor');
+const { getPaginationParams, buildPaginatedResponse } = require('../utils/pagination');
 
 // Get assets for a project (optionally filtered by look)
 exports.getAssets = async (req, res) => {
     try {
         const { projectId } = req.params;
         const { look_id } = req.query;
+        const pagination = getPaginationParams(req.query, { defaultLimit: 50 });
 
         let query = supabase
             .from('assets')
-            .select('*, look:looks(name), annotations(count)')
+            .select('*, look:looks(name), annotations(count)', pagination.hasPagination ? { count: 'exact' } : undefined)
             .eq('project_id', projectId)
             .order('position', { ascending: true });
 
         if (look_id) {
             query = query.eq('look_id', look_id);
         }
+        if (pagination.hasPagination) query = query.range(pagination.from, pagination.to);
 
-        const { data, error } = await query;
+        const { data, error, count } = await query;
         if (error) throw error;
-        res.json(data);
+        res.json(buildPaginatedResponse(data, count, pagination));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -57,15 +60,15 @@ exports.createAsset = async (req, res) => {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
-        const file = req.file;
-        const ext = path.extname(file.originalname);
-        const filePath = `${req.user.id}/${projectId}/${Date.now()}${ext}`;
+        // Compress raster images to WebP (eco-design + faster delivery)
+        const processed = await toWebp(req.file);
+        const filePath = `${req.user.id}/${projectId}/${Date.now()}${processed.extension}`;
 
         // Upload to Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
             .from('assets')
-            .upload(filePath, file.buffer, {
-                contentType: file.mimetype,
+            .upload(filePath, processed.buffer, {
+                contentType: processed.mimetype,
                 upsert: false,
             });
 
@@ -82,15 +85,15 @@ exports.createAsset = async (req, res) => {
         const { data, error } = await supabase
             .from('assets')
             .insert([{
-                name: name || file.originalname,
-                type: type || file.mimetype.split('/')[0],
+                name: name || req.file.originalname,
+                type: type || processed.mimetype.split('/')[0],
                 url: fileUrl,
                 file_path: filePath,
                 project_id: projectId,
                 look_id: look_id || null,
                 position: position || 0,
-                file_size: file.size,
-                mime_type: file.mimetype,
+                file_size: processed.buffer.length,
+                mime_type: processed.mimetype,
                 uploaded_by: req.user.id,
             }])
             .select();
@@ -176,14 +179,13 @@ exports.uploadVersion = async (req, res) => {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
-        const file = req.file;
-        const ext = path.extname(file.originalname);
-        const filePath = `${req.user.id}/versions/${req.params.id}/${Date.now()}${ext}`;
+        const processed = await toWebp(req.file);
+        const filePath = `${req.user.id}/versions/${req.params.id}/${Date.now()}${processed.extension}`;
 
         const { error: uploadError } = await supabase.storage
             .from('assets')
-            .upload(filePath, file.buffer, {
-                contentType: file.mimetype,
+            .upload(filePath, processed.buffer, {
+                contentType: processed.mimetype,
             });
 
         if (uploadError) throw uploadError;

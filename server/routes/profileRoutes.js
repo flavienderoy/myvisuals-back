@@ -13,4 +13,7 @@ router.get('/', requireAuth, profileController.getProfile);
 router.put('/', requireAuth, profileController.updateProfile);
 router.post('/avatar', requireAuth, upload.single('avatar'), profileController.uploadAvatar);
 
+// RGPD — Right to erasure: permanently delete the authenticated user's account
+router.delete('/account', requireAuth, profileController.deleteAccount);
+
 module.exports = router;

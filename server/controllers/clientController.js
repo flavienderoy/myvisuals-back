@@ -1,15 +1,21 @@
 const supabase = require('../config/supabase');
+const { getPaginationParams, buildPaginatedResponse } = require('../utils/pagination');
 
 exports.getClients = async (req, res) => {
     try {
-        const { data, error } = await supabase
+        const pagination = getPaginationParams(req.query);
+
+        let query = supabase
             .from('clients')
-            .select('*')
+            .select('*', pagination.hasPagination ? { count: 'exact' } : undefined)
             .eq('owner_id', req.user.id)
             .order('created_at', { ascending: false });
 
+        if (pagination.hasPagination) query = query.range(pagination.from, pagination.to);
+
+        const { data, error, count } = await query;
         if (error) throw error;
-        res.json(data);
+        res.json(buildPaginatedResponse(data, count, pagination));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

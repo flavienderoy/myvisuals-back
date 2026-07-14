@@ -149,10 +149,10 @@ Tu dois présenter un **tableau SWOT** complet :
 │ • Multi-métier (photo, 3D, graphisme│                                     │
 │   archi) = cible large              │                                     │
 │ • 17 controllers API déjà en place  │                                     │
-│ • 33+ composants fonctionnels       │                                     │
-│ • CI/CD prévu (GitHub Actions)      │                                     │
-│ • Tests auto prévus (Vitest +       │                                     │
-│   Playwright)                       │                                     │
+│ • 80+ composants fonctionnels       │                                     │
+│ • CI/CD en place (GitHub Actions)   │                                     │
+│ • Tests auto en place (Vitest +     │                                     │
+│   RTL + Supertest + Playwright)     │                                     │
 ├─────────────────────────────────────┼─────────────────────────────────────┤
 │        OPPORTUNITÉS (O)             │          MENACES (T)                │
 │                                     │                                     │
@@ -175,25 +175,26 @@ Document à produire (dans tes slides) — voici le contenu à couvrir :
 #### Technologies existantes / État de l'art du projet
 | Couche | Technologie | Version | État |
 |---|---|---|---|
-| Frontend | React + Vite | React 18 / Vite 6 | ✅ Fonctionnel |
-| Routing | React Router | v6 | ✅ Fonctionnel |
+| Frontend | React + Vite | React 19 / Vite 7 | ✅ Fonctionnel |
+| Routing | React Router | v7 | ✅ Fonctionnel |
 | State Management | Context API | — | ✅ En place |
 | Notifications UI | react-hot-toast | v2 | ✅ En place |
 | Backend | Express.js | v5 | ✅ Fonctionnel |
 | Base de données | Supabase (PostgreSQL) | v2 | ✅ En place |
 | Authentification | Supabase Auth (JWT) | v2 | ✅ Fonctionnel |
-| Stockage fichiers | Supabase Storage | v2 | ⚠️ Partiellement intégré |
+| Stockage fichiers | Supabase Storage | v2 | ✅ En place (compression WebP auto à l'upload) |
 | Upload fichiers | Multer | v2 | ✅ En place |
-| Temps réel | Supabase Realtime | v2 | 🔲 À implémenter |
+| Compression images | Sharp → WebP | v0.35 | ✅ Implémenté (assets + versions + avatars) |
+| Temps réel | Supabase Realtime | v2 | ✅ Fonctionnel (activités, notifications, messages) |
 | Logging serveur | Morgan | v1 | ✅ En place |
-| **Tests unitaires** | **Vitest** | v2 | 🔲 Prévu — framework de test natif Vite, compatible Jest |
-| **Tests composants** | **React Testing Library** | v16 | 🔲 Prévu — tests des composants React |
-| **Tests E2E** | **Playwright** | v1 | 🔲 Prévu — tests navigateur cross-browser (Chrome, Firefox, Safari) |
-| **Tests API** | **Supertest** | v7 | 🔲 Prévu — tests des endpoints Express |
-| **Linting** | **ESLint** | v9 | ⚠️ Partiel — à configurer avec règles strictes |
-| **Formatting** | **Prettier** | v3 | 🔲 Prévu — formatage automatique du code |
-| **CI/CD** | **GitHub Actions** | — | 🔲 Prévu — pipeline d'intégration et déploiement continu |
-| **Conteneurisation** | **Docker + Docker Compose** | — | 🔲 Prévu — environnements reproductibles |
+| **Tests unitaires** | **Vitest** | v3 | ✅ Implémenté — 76 tests client + 76 tests serveur |
+| **Tests composants** | **React Testing Library** | v16 | ✅ Implémenté — tests des composants React |
+| **Tests E2E** | **Playwright** | v1 | ✅ Implémenté — 27 tests cross-browser (Chrome, Firefox, Safari) |
+| **Tests API** | **Supertest** | v7 | ✅ Implémenté — tests des endpoints Express |
+| **Linting** | **ESLint** | v10 (serveur) / v9 (client) | ✅ Configuré — 0 erreur |
+| **Formatting** | **Prettier** | v3 | ✅ En place (via lint-staged) |
+| **CI/CD** | **GitHub Actions** | — | ✅ En place — lint → test → e2e → docker → deploy |
+| **Conteneurisation** | **Docker + Docker Compose** | — | ✅ En place — Dockerfile multi-stage Alpine |
 
 #### Infrastructure cible (production)
 | Couche | Service | Hébergement | Région |
@@ -209,7 +210,7 @@ Document à produire (dans tes slides) — voici le contenu à couvrir :
 
 #### Infrastructure de développement
 - **Frontend** : Vite dev server (port 5173)
-- **Backend** : Node.js/Express via Nodemon (port 3001)
+- **Backend** : Node.js/Express via Nodemon (port 5001)
 - **BDD** : Supabase Cloud (même instance qu'en prod, projet dédié dev)
 - **Conteneurs** : Docker + Docker Compose pour env local reproductible
 
@@ -312,7 +313,7 @@ Tu dois présenter une **Analyse d'Impact sur la Protection des Données (PIA)**
 | Accès non autorisé aux photos | 🔴 Critique | Row Level Security (RLS) Supabase, middleware d'auth |
 | Transfert hors UE | 🟡 Moyen | Supabase hébergé en UE (Frankfurt), backend GCP en UE (Belgique `europe-west1`), Vercel CDN avec nœuds EU |
 | Absence de consentement | 🟡 Moyen | Bandeau cookies, CGU avec consentement explicite |
-| Droit à l'effacement non respecté | 🟡 Moyen | Endpoint de suppression de compte + cascade sur les données |
+| Droit à l'effacement non respecté | 🟡 Moyen | ✅ Endpoint `DELETE /api/profile/account` : purge Storage + cascade BDD + suppression identité Auth |
 
 ### 2.4 Contraintes du Projet
 
@@ -629,7 +630,7 @@ Tu dois produire **minimum 3 schémas** :
 │                    FRONTEND (React + Vite)                        │
 │  ┌────────┐ ┌──────────┐ ┌──────────┐ ┌────────────┐            │
 │  │ Pages  │ │Components│ │ Services │ │  Context   │            │
-│  │ (3+)   │ │ (33+)    │ │ (18 API) │ │ (Auth/Data)│            │
+│  │ (13+)  │ │ (80+)    │ │ (18 API) │ │ (Auth/Data)│            │
 │  └────────┘ └──────────┘ └──────────┘ └────────────┘            │
 │                        Hébergé sur Vercel                        │
 └────────────────────────────┬─────────────────────────────────────┘

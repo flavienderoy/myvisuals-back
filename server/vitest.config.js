@@ -8,7 +8,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      include: ['controllers/**', 'middlewares/**', 'routes/**', 'app.js'],
+      include: ['controllers/**', 'middlewares/**', 'routes/**', 'utils/**', 'app.js'],
     },
   },
 });
