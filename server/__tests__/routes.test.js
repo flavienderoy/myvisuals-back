@@ -1,6 +1,6 @@
 /**
  * Tests — API Routes Structure
- * Verifies all 17 API route groups are correctly mounted and respond
+ * Verifies all 16 API route groups are correctly mounted and respond
  */
 const request = require('supertest');
 const app = require('../app');
@@ -16,7 +16,6 @@ describe('API Routes Structure', () => {
         { path: '/api/messages/project/test-id', description: 'Messages' },
         { path: '/api/mood-boards', description: 'Mood Boards' },
         { path: '/api/profile', description: 'Profile' },
-        { path: '/api/quotes', description: 'Quotes' },
         { path: '/api/time-entries', description: 'Time Entries' },
         { path: '/api/activities/project/test-id', description: 'Activities' },
         { path: '/api/watermark', description: 'Watermark' },
@@ -35,8 +34,8 @@ describe('API Routes Structure', () => {
         }
     );
 
-    it('should have exactly 17 API route groups', () => {
-        expect(apiRoutes).toHaveLength(17);
+    it('should have exactly 16 API route groups', () => {
+        expect(apiRoutes).toHaveLength(16);
     });
 });
 

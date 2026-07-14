@@ -109,7 +109,7 @@ exports.deleteAccount = async (req, res) => {
                 .remove(avatarFiles.map((f) => `${userId}/${f.name}`));
         }
 
-        // 3. Delete the profile row (FK cascade removes projects, quotes, messages…)
+        // 3. Delete the profile row (FK cascade removes projects, assets, messages…)
         const { error: profileError } = await supabase
             .from('profiles')
             .delete()

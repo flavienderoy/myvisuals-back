@@ -10,7 +10,6 @@ describe('Authentication Middleware', () => {
         { method: 'get', path: '/api/projects' },
         { method: 'get', path: '/api/clients' },
         { method: 'get', path: '/api/assets/project/test-id' },
-        { method: 'get', path: '/api/quotes' },
         { method: 'get', path: '/api/notifications' },
         { method: 'get', path: '/api/tasks' },
         { method: 'get', path: '/api/messages/project/test-id' },
