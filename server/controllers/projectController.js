@@ -5,12 +5,30 @@ exports.getProjects = async (req, res) => {
     try {
         const { client_id, status } = req.query;
         const pagination = getPaginationParams(req.query);
+        const role = req.user.user_metadata?.role || 'client';
 
         let query = supabase
             .from('projects')
             .select('*, client:clients(name, logo_url)', pagination.hasPagination ? { count: 'exact' } : undefined)
-            .eq('owner_id', req.user.id)
             .order('created_at', { ascending: false });
+
+        if (role === 'client') {
+            // A client sees the projects of the client records linked to their account
+            const { data: linked, error: linkError } = await supabase
+                .from('clients')
+                .select('id')
+                .eq('user_id', req.user.id);
+            if (linkError) throw linkError;
+
+            const clientIds = (linked || []).map((c) => c.id);
+            if (clientIds.length === 0) {
+                return res.json(buildPaginatedResponse([], 0, pagination));
+            }
+            query = query.in('client_id', clientIds);
+        } else {
+            // A studio sees the projects it owns
+            query = query.eq('owner_id', req.user.id);
+        }
 
         if (client_id) query = query.eq('client_id', client_id);
         if (status) query = query.eq('status', status);

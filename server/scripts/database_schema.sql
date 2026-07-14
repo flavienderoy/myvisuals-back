@@ -11,10 +11,16 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- 2. Clients Table
 CREATE TABLE IF NOT EXISTS public.clients (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    owner_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    owner_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,      -- the studio that owns this client record
+    user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,      -- the client's own account, once they accept the invite
     name TEXT NOT NULL,
+    email TEXT,                                                          -- email the invitation is sent to
+    description TEXT,
     logo_url TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+    avatar_url TEXT,
+    invite_status TEXT NOT NULL DEFAULT 'pending',                       -- 'pending' | 'accepted'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 
 -- 3. Projects Table

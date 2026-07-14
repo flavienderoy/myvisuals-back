@@ -40,14 +40,77 @@ exports.getClientById = async (req, res) => {
 
 exports.createClient = async (req, res) => {
     try {
-        const { name, description, logo_url, avatar_url } = req.body;
+        const { name, description, logo_url, avatar_url, email } = req.body;
         const { data, error } = await supabase
             .from('clients')
-            .insert([{ name, description, logo_url, avatar_url, owner_id: req.user.id }])
+            .insert([{
+                name,
+                description,
+                logo_url,
+                avatar_url,
+                email: email ? email.trim().toLowerCase() : null,
+                invite_status: 'pending',
+                owner_id: req.user.id,
+            }])
             .select();
 
         if (error) throw error;
         res.status(201).json(data[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Client portal — pending invitations addressed to the logged-in user's email
+exports.getMyInvitations = async (req, res) => {
+    try {
+        const email = req.user.email?.toLowerCase();
+        if (!email) return res.json([]);
+
+        const { data, error } = await supabase
+            .from('clients')
+            .select('id, name, email, owner:profiles!clients_owner_id_fkey(name, organization), projects(count)')
+            .eq('email', email)
+            .is('user_id', null)
+            .eq('invite_status', 'pending');
+
+        if (error) throw error;
+        res.json(data || []);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Client portal — accept an invitation: link this client record to the user
+exports.acceptInvitation = async (req, res) => {
+    try {
+        const email = req.user.email?.toLowerCase();
+
+        // Only allow claiming a record that was invited to *this* user's email
+        const { data: client, error: fetchError } = await supabase
+            .from('clients')
+            .select('id, email, user_id')
+            .eq('id', req.params.id)
+            .single();
+
+        if (fetchError || !client) {
+            return res.status(404).json({ error: 'Invitation not found' });
+        }
+        if (client.user_id) {
+            return res.status(409).json({ error: 'Invitation already accepted' });
+        }
+        if (!client.email || client.email.toLowerCase() !== email) {
+            return res.status(403).json({ error: 'This invitation is addressed to another email' });
+        }
+
+        const { data, error } = await supabase
+            .from('clients')
+            .update({ user_id: req.user.id, invite_status: 'accepted', updated_at: new Date().toISOString() })
+            .eq('id', req.params.id)
+            .select();
+
+        if (error) throw error;
+        res.json(data[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
