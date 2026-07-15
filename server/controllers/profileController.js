@@ -92,7 +92,7 @@ exports.deleteAccount = async (req, res) => {
         const { data: assets } = await supabase
             .from('assets')
             .select('file_path')
-            .eq('uploaded_by', userId);
+            .eq('owner_id', userId);
 
         const assetPaths = (assets || []).map((a) => a.file_path).filter(Boolean);
         if (assetPaths.length) {

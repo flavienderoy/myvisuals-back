@@ -146,7 +146,7 @@ exports.createAsset = async (req, res) => {
                 position: position || 0,
                 file_size: size,
                 mime_type: mime,
-                uploaded_by: req.user.id,
+                owner_id: req.user.id,
             }])
             .select();
 
