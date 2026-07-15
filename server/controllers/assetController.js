@@ -94,8 +94,8 @@ exports.getAssetById = async (req, res) => {
             .select(`
                 *,
                 look:looks(name),
-                versions:asset_versions(*, created_by_profile:profiles(name, avatar_url)),
-                annotations(*, author:profiles(name, avatar_url))
+                versions:asset_versions(*),
+                annotations(*)
             `)
             .eq('id', req.params.id)
             .single();
@@ -109,6 +109,20 @@ exports.getAssetById = async (req, res) => {
             data.versions = await Promise.all(
                 data.versions.map(async (v) => ({ ...v, url: await signPreview(v) }))
             );
+        }
+
+        // Attach authors separately (no reliable FK embed for profiles)
+        const userIds = new Set();
+        (data.annotations || []).forEach((a) => a.user_id && userIds.add(a.user_id));
+        (data.versions || []).forEach((v) => v.created_by && userIds.add(v.created_by));
+        if (userIds.size) {
+            const { data: profs } = await supabase
+                .from('profiles')
+                .select('id, name, avatar_url')
+                .in('id', [...userIds]);
+            const byId = Object.fromEntries((profs || []).map((p) => [p.id, p]));
+            data.annotations = (data.annotations || []).map((a) => ({ ...a, author: byId[a.user_id] || null }));
+            data.versions = (data.versions || []).map((v) => ({ ...v, created_by_profile: byId[v.created_by] || null }));
         }
         res.json(data);
     } catch (error) {
@@ -205,20 +219,33 @@ exports.addAnnotation = async (req, res) => {
     try {
         const { content, x_position, y_position, timestamp } = req.body;
 
+        const row = {
+            asset_id: req.params.id,
+            user_id: req.user.id,
+            content,
+            x: x_position,
+            y: y_position,
+        };
+        // `timestamp` is a numeric column (video position in seconds); only set
+        // it when a number is provided — the creation date lives in created_at.
+        if (typeof timestamp === 'number') row.timestamp = timestamp;
+
         const { data, error } = await supabase
             .from('annotations')
-            .insert([{
-                asset_id: req.params.id,
-                user_id: req.user.id,
-                content,
-                x_position,
-                y_position,
-                timestamp,
-            }])
-            .select('*, author:profiles(name, avatar_url)');
+            .insert([row])
+            .select('*');
 
         if (error) throw error;
-        res.status(201).json(data[0]);
+
+        // Attach the author separately (no reliable FK relationship for the embed)
+        const { data: author } = await supabase
+            .from('profiles')
+            .select('name, avatar_url')
+            .eq('id', req.user.id)
+            .single();
+
+        // Expose created_at as `timestamp` so the UI can show when it was added
+        res.status(201).json({ ...data[0], timestamp: data[0].created_at, author: author || null });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
