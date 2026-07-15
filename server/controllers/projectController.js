@@ -5,28 +5,25 @@ exports.getProjects = async (req, res) => {
     try {
         const { client_id, status } = req.query;
         const pagination = getPaginationParams(req.query);
-        const role = req.user.user_metadata?.role || 'client';
+
+        // Visibility is derived from the data, not from role metadata (robust):
+        // a user sees the projects they OWN (studio) plus those of the client
+        // records LINKED to their account (client).
+        const { data: linked, error: linkError } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('user_id', req.user.id);
+        if (linkError) throw linkError;
+        const clientIds = (linked || []).map((c) => c.id);
 
         let query = supabase
             .from('projects')
             .select('*, client:clients(name, logo_url)', pagination.hasPagination ? { count: 'exact' } : undefined)
             .order('created_at', { ascending: false });
 
-        if (role === 'client') {
-            // A client sees the projects of the client records linked to their account
-            const { data: linked, error: linkError } = await supabase
-                .from('clients')
-                .select('id')
-                .eq('user_id', req.user.id);
-            if (linkError) throw linkError;
-
-            const clientIds = (linked || []).map((c) => c.id);
-            if (clientIds.length === 0) {
-                return res.json(buildPaginatedResponse([], 0, pagination));
-            }
-            query = query.in('client_id', clientIds);
+        if (clientIds.length) {
+            query = query.or(`owner_id.eq.${req.user.id},client_id.in.(${clientIds.join(',')})`);
         } else {
-            // A studio sees the projects it owns
             query = query.eq('owner_id', req.user.id);
         }
 
