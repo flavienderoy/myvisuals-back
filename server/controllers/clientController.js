@@ -67,15 +67,33 @@ exports.getMyInvitations = async (req, res) => {
         const email = req.user.email?.toLowerCase();
         if (!email) return res.json([]);
 
-        const { data, error } = await supabase
+        const { data: invites, error } = await supabase
             .from('clients')
-            .select('id, name, email, owner:profiles!clients_owner_id_fkey(name, organization), projects(count)')
+            .select('id, name, email, owner_id')
             .eq('email', email)
             .is('user_id', null)
             .eq('invite_status', 'pending');
 
         if (error) throw error;
-        res.json(data || []);
+        if (!invites || invites.length === 0) return res.json([]);
+
+        // Resolve the inviting studio's name separately (robust to embed/FK quirks)
+        const ownerIds = [...new Set(invites.map((i) => i.owner_id).filter(Boolean))];
+        let ownersById = {};
+        if (ownerIds.length) {
+            const { data: owners } = await supabase
+                .from('profiles')
+                .select('id, name, organization')
+                .in('id', ownerIds);
+            ownersById = Object.fromEntries((owners || []).map((o) => [o.id, o]));
+        }
+
+        res.json(invites.map((i) => ({
+            id: i.id,
+            name: i.name,
+            email: i.email,
+            owner: ownersById[i.owner_id] || null,
+        })));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
