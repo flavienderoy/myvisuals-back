@@ -12,6 +12,7 @@ const upload = multer({
 
 // Asset CRUD
 router.get('/project/:projectId', requireAuth, assetController.getAssets);
+router.get('/project/:projectId/zip', requireAuth, assetController.downloadProjectZip);
 router.get('/:id/download', requireAuth, assetController.downloadAsset);
 router.get('/:id', requireAuth, assetController.getAssetById);
 router.post('/project/:projectId', requireAuth, upload.single('file'), assetController.createAsset);

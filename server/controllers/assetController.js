@@ -1,3 +1,4 @@
+const archiver = require('archiver');
 const supabase = require('../config/supabase');
 const { toWebp, makeWatermarkedPreview } = require('../utils/imageProcessor');
 const { getPaginationParams, buildPaginatedResponse } = require('../utils/pagination');
@@ -301,5 +302,79 @@ exports.downloadAsset = async (req, res) => {
         res.json({ url: data.signedUrl });
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+};
+
+// Can this user download this project's original files?
+// Returns 'owner' | 'client' | null.
+async function projectDownloadRole(project, user) {
+    if (!project) return null;
+    if (project.owner_id === user.id) return 'owner';
+    if (project.client_id) {
+        const { data: link } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('id', project.client_id)
+            .eq('user_id', user.id)
+            .maybeSingle();
+        if (link) return 'client';
+    }
+    return null;
+}
+
+// Stream a ZIP of a project's original files. Studio gets everything;
+// a linked client gets only approved assets. Optional ?ids=a,b limits selection.
+exports.downloadProjectZip = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const ids = req.query.ids ? req.query.ids.split(',').filter(Boolean) : null;
+
+        const { data: project } = await supabase
+            .from('projects')
+            .select('id, name, owner_id, client_id')
+            .eq('id', projectId)
+            .single();
+
+        const role = await projectDownloadRole(project, req.user);
+        if (!role) return res.status(403).json({ error: 'Not authorized' });
+
+        let q = supabase.from('assets').select('id, name, status, file_path').eq('project_id', projectId);
+        if (ids) q = q.in('id', ids);
+        if (role === 'client') q = q.eq('status', 'approved');
+
+        const { data: assets } = await q;
+        const downloadable = (assets || []).filter((a) => a.file_path);
+        if (downloadable.length === 0) {
+            return res.status(404).json({ error: 'No downloadable files' });
+        }
+
+        const zipName = `${(project.name || 'assets').replace(/[^a-z0-9-_]+/gi, '_')}.zip`;
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${zipName}"`);
+
+        const archive = archiver('zip', { zlib: { level: 6 } });
+        archive.on('error', (err) => {
+            if (!res.headersSent) res.status(500).json({ error: err.message });
+        });
+        archive.pipe(res);
+
+        const usedNames = new Set();
+        for (const a of downloadable) {
+            const { data: blob, error } = await supabase.storage.from(BUCKET).download(a.file_path);
+            if (error || !blob) continue;
+            const buf = Buffer.from(await blob.arrayBuffer());
+            const ext = a.file_path.slice(a.file_path.lastIndexOf('.'));
+            let base = (a.name || a.id).replace(/[/\\]/g, '_');
+            if (!base.toLowerCase().endsWith(ext.toLowerCase())) base += ext;
+            // De-duplicate identical file names inside the archive
+            let name = base;
+            let i = 1;
+            while (usedNames.has(name)) name = base.replace(ext, `_${i++}${ext}`);
+            usedNames.add(name);
+            archive.append(buf, { name });
+        }
+        await archive.finalize();
+    } catch (error) {
+        if (!res.headersSent) res.status(500).json({ error: error.message });
     }
 };
