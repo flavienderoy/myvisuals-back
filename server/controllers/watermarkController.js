@@ -19,24 +19,30 @@ exports.getSettings = async (req, res) => {
 // Upsert watermark settings
 exports.saveSettings = async (req, res) => {
     try {
-        const { text, opacity, position, size, color, enabled } = req.body;
+        const { text, opacity, position, image_url } = req.body;
 
-        const { data, error } = await supabase
+        const payload = {
+            text,
+            opacity,
+            position,
+            image_url,
+            updated_at: new Date().toISOString(),
+        };
+
+        // Single settings row (MVP): update the existing one, or insert if none.
+        // (Avoids assuming a fixed id — the id column is a uuid.)
+        const { data: existing } = await supabase
             .from('watermark_settings')
-            .upsert({
-                id: 1, // Global or single config for MVP
-                text,
-                opacity,
-                position,
-                size,
-                color,
-                enabled,
-                updated_at: new Date().toISOString(),
-            })
-            .select();
+            .select('id')
+            .limit(1)
+            .maybeSingle();
 
-        if (error) throw error;
-        res.json(data[0]);
+        const result = existing
+            ? await supabase.from('watermark_settings').update(payload).eq('id', existing.id).select()
+            : await supabase.from('watermark_settings').insert([payload]).select();
+
+        if (result.error) throw result.error;
+        res.json(result.data[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

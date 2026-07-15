@@ -5,6 +5,7 @@ exports.getSmartFolders = async (req, res) => {
         const { data, error } = await supabase
             .from('smart_folders')
             .select('*')
+            .eq('owner_id', req.user.id)
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -21,7 +22,8 @@ exports.createSmartFolder = async (req, res) => {
             .from('smart_folders')
             .insert([{
                 name,
-                filters: filters || {}
+                filters: filters || {},
+                owner_id: req.user.id,
             }])
             .select();
 

@@ -30,6 +30,7 @@ exports.createActivity = async (req, res) => {
             .from('activities')
             .insert([{
                 project_id,
+                user_id: req.user.id,
                 type,
                 description,
                 metadata: metadata || {},

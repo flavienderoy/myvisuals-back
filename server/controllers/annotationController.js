@@ -20,20 +20,28 @@ exports.getAnnotations = async (req, res) => {
 exports.createAnnotation = async (req, res) => {
     try {
         const { asset_id, content, x_position, y_position } = req.body;
-        
+
         const { data, error } = await supabase
             .from('annotations')
             .insert([{
                 asset_id,
                 user_id: req.user.id,
                 content,
-                x_position,
-                y_position
+                x: x_position,
+                y: y_position,
             }])
             .select();
 
         if (error) throw error;
-        res.status(201).json(data[0]);
+
+        // Attach author separately (no reliable FK embed for profiles)
+        const { data: author } = await supabase
+            .from('profiles')
+            .select('name, avatar_url')
+            .eq('id', req.user.id)
+            .single();
+
+        res.status(201).json({ ...data[0], timestamp: data[0].created_at, author: author || null });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

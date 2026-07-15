@@ -19,7 +19,7 @@ exports.getMessages = async (req, res) => {
 // Send a message
 exports.sendMessage = async (req, res) => {
     try {
-        const { content, type } = req.body;
+        const { content } = req.body;
 
         const { data, error } = await supabase
             .from('messages')
@@ -27,7 +27,6 @@ exports.sendMessage = async (req, res) => {
                 project_id: req.params.projectId,
                 sender_id: req.user.id,
                 content,
-                type: type || 'text',
             }])
             .select('*');
 

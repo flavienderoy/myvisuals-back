@@ -32,6 +32,7 @@ exports.createAuditLog = async (req, res) => {
                 action,
                 resource_type,
                 resource_id,
+                user_id: req.user.id,
                 details: details || {},
             }])
             .select();
