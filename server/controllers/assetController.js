@@ -1,6 +1,58 @@
 const supabase = require('../config/supabase');
-const { toWebp } = require('../utils/imageProcessor');
+const { toWebp, makeWatermarkedPreview } = require('../utils/imageProcessor');
 const { getPaginationParams, buildPaginatedResponse } = require('../utils/pagination');
+
+const BUCKET = 'assets';
+const PREVIEW_TTL = 3600; // 1h — signed URL lifetime for watermarked previews
+const DOWNLOAD_TTL = 60; // 60s — signed URL lifetime for original HD downloads
+
+// Sign the watermarked preview (falls back to the file itself for non-images).
+// The ORIGINAL is never signed here — only via the authorized download endpoint.
+async function signPreview(row) {
+    const path = row?.preview_path || row?.file_path;
+    if (!path) return null;
+    const { data } = await supabase.storage.from(BUCKET).createSignedUrl(path, PREVIEW_TTL);
+    return data?.signedUrl || null;
+}
+
+// Watermark label = the studio's organization/name (fallback "PREVIEW").
+async function getWatermarkText(ownerId) {
+    if (!ownerId) return 'PREVIEW';
+    const { data } = await supabase
+        .from('profiles')
+        .select('name, organization')
+        .eq('id', ownerId)
+        .single();
+    return data?.organization || data?.name || 'PREVIEW';
+}
+
+/**
+ * Upload the original HD file (private) and a watermark-burned preview.
+ * Returns { filePath, previewPath, size, mime }.
+ */
+async function uploadRenditions({ file, basePath, ownerId }) {
+    const processed = await toWebp(file);
+    const filePath = `${basePath}${processed.extension}`;
+
+    const { error: upErr } = await supabase.storage
+        .from(BUCKET)
+        .upload(filePath, processed.buffer, { contentType: processed.mimetype, upsert: false });
+    if (upErr) throw upErr;
+
+    // Watermarked preview (images only). Non-images reuse the original as preview.
+    let previewPath = filePath;
+    const watermarkText = await getWatermarkText(ownerId);
+    const preview = await makeWatermarkedPreview(file.buffer, { text: watermarkText });
+    if (preview) {
+        previewPath = `${basePath}.preview.webp`;
+        const { error: pErr } = await supabase.storage
+            .from(BUCKET)
+            .upload(previewPath, preview.buffer, { contentType: preview.mimetype, upsert: false });
+        if (pErr) throw pErr;
+    }
+
+    return { filePath, previewPath, size: processed.buffer.length, mime: processed.mimetype };
+}
 
 // Get assets for a project (optionally filtered by look)
 exports.getAssets = async (req, res) => {
@@ -22,7 +74,12 @@ exports.getAssets = async (req, res) => {
 
         const { data, error, count } = await query;
         if (error) throw error;
-        res.json(buildPaginatedResponse(data, count, pagination));
+
+        // Attach short-lived signed URLs to the watermarked previews
+        const withUrls = await Promise.all(
+            (data || []).map(async (a) => ({ ...a, url: await signPreview(a) }))
+        );
+        res.json(buildPaginatedResponse(withUrls, count, pagination));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -44,6 +101,14 @@ exports.getAssetById = async (req, res) => {
 
         if (error) throw error;
         if (!data) return res.status(404).json({ error: 'Asset not found' });
+
+        // Sign the asset preview and each version preview
+        data.url = await signPreview(data);
+        if (Array.isArray(data.versions)) {
+            data.versions = await Promise.all(
+                data.versions.map(async (v) => ({ ...v, url: await signPreview(v) }))
+            );
+        }
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -60,46 +125,32 @@ exports.createAsset = async (req, res) => {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
-        // Compress raster images to WebP (eco-design + faster delivery)
-        const processed = await toWebp(req.file);
-        const filePath = `${req.user.id}/${projectId}/${Date.now()}${processed.extension}`;
+        // Upload original (private) + burn a watermarked preview
+        const { filePath, previewPath, size, mime } = await uploadRenditions({
+            file: req.file,
+            basePath: `${req.user.id}/${projectId}/${Date.now()}`,
+            ownerId: req.user.id,
+        });
 
-        // Upload to Supabase Storage
-        const { error: uploadError } = await supabase.storage
-            .from('assets')
-            .upload(filePath, processed.buffer, {
-                contentType: processed.mimetype,
-                upsert: false,
-            });
-
-        if (uploadError) throw uploadError;
-
-        // Get public/signed URL
-        const { data: urlData } = supabase.storage
-            .from('assets')
-            .getPublicUrl(filePath);
-
-        const fileUrl = urlData.publicUrl;
-
-        // Create asset record
+        // Create asset record — no public URL is ever stored
         const { data, error } = await supabase
             .from('assets')
             .insert([{
                 name: name || req.file.originalname,
-                type: type || processed.mimetype.split('/')[0],
-                url: fileUrl,
+                type: type || mime.split('/')[0],
                 file_path: filePath,
+                preview_path: previewPath,
                 project_id: projectId,
                 look_id: look_id || null,
                 position: position || 0,
-                file_size: processed.buffer.length,
-                mime_type: processed.mimetype,
+                file_size: size,
+                mime_type: mime,
                 uploaded_by: req.user.id,
             }])
             .select();
 
         if (error) throw error;
-        res.status(201).json(data[0]);
+        res.status(201).json({ ...data[0], url: await signPreview(data[0]) });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -179,20 +230,11 @@ exports.uploadVersion = async (req, res) => {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
-        const processed = await toWebp(req.file);
-        const filePath = `${req.user.id}/versions/${req.params.id}/${Date.now()}${processed.extension}`;
-
-        const { error: uploadError } = await supabase.storage
-            .from('assets')
-            .upload(filePath, processed.buffer, {
-                contentType: processed.mimetype,
-            });
-
-        if (uploadError) throw uploadError;
-
-        const { data: urlData } = supabase.storage
-            .from('assets')
-            .getPublicUrl(filePath);
+        const { filePath, previewPath } = await uploadRenditions({
+            file: req.file,
+            basePath: `${req.user.id}/versions/${req.params.id}/${Date.now()}`,
+            ownerId: req.user.id,
+        });
 
         // Get current version count
         const { count } = await supabase
@@ -205,15 +247,58 @@ exports.uploadVersion = async (req, res) => {
             .insert([{
                 asset_id: req.params.id,
                 version_number: (count || 0) + 1,
-                url: urlData.publicUrl,
                 file_path: filePath,
+                preview_path: previewPath,
                 created_by: req.user.id,
                 comment: req.body.comment || null,
             }])
             .select();
 
         if (error) throw error;
-        res.status(201).json(data[0]);
+        res.status(201).json({ ...data[0], url: await signPreview(data[0]) });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Authorized download of the ORIGINAL HD file.
+// The original is never shipped to the browser except through this endpoint,
+// which mints a very short-lived signed URL only for authorized requesters.
+exports.downloadAsset = async (req, res) => {
+    try {
+        const { data: asset, error } = await supabase
+            .from('assets')
+            .select('id, name, status, file_path, project:projects(owner_id, client_id)')
+            .eq('id', req.params.id)
+            .single();
+
+        if (error || !asset) return res.status(404).json({ error: 'Asset not found' });
+        if (!asset.file_path) return res.status(404).json({ error: 'No file for this asset' });
+
+        const isOwner = asset.project?.owner_id === req.user.id;
+
+        let allowed = isOwner;
+        if (!allowed && asset.status === 'approved' && asset.project?.client_id) {
+            // The requester must be the client linked to this project, and the asset approved
+            const { data: link } = await supabase
+                .from('clients')
+                .select('id')
+                .eq('id', asset.project.client_id)
+                .eq('user_id', req.user.id)
+                .maybeSingle();
+            allowed = Boolean(link);
+        }
+
+        if (!allowed) {
+            return res.status(403).json({ error: 'Not authorized to download this file' });
+        }
+
+        const { data, error: signErr } = await supabase.storage
+            .from(BUCKET)
+            .createSignedUrl(asset.file_path, DOWNLOAD_TTL, { download: asset.name || true });
+        if (signErr) throw signErr;
+
+        res.json({ url: data.signedUrl });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
