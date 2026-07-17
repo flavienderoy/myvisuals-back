@@ -10,7 +10,19 @@ exports.getMessages = async (req, res) => {
             .order('created_at', { ascending: true });
 
         if (error) throw error;
-        res.json(data);
+
+        // Attach sender profiles separately (no reliable FK embed for profiles)
+        const senderIds = [...new Set((data || []).map((m) => m.sender_id).filter(Boolean))];
+        let sendersById = {};
+        if (senderIds.length) {
+            const { data: profs } = await supabase
+                .from('profiles')
+                .select('id, name, avatar_url')
+                .in('id', senderIds);
+            sendersById = Object.fromEntries((profs || []).map((p) => [p.id, p]));
+        }
+
+        res.json((data || []).map((m) => ({ ...m, sender: sendersById[m.sender_id] || null })));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
