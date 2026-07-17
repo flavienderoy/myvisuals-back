@@ -19,7 +19,7 @@ exports.getAnnotations = async (req, res) => {
 
 exports.createAnnotation = async (req, res) => {
     try {
-        const { asset_id, content, x_position, y_position } = req.body;
+        const { asset_id, content, x_position, y_position, parent_id } = req.body;
 
         const { data, error } = await supabase
             .from('annotations')
@@ -27,8 +27,10 @@ exports.createAnnotation = async (req, res) => {
                 asset_id,
                 user_id: req.user.id,
                 content,
-                x: x_position,
-                y: y_position,
+                // Replies inherit their parent's position, so x/y stay null
+                x: parent_id ? null : x_position,
+                y: parent_id ? null : y_position,
+                parent_id: parent_id || null,
             }])
             .select();
 
