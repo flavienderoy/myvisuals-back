@@ -9,5 +9,6 @@ router.get('/:id', requireAuth, projectController.getProjectById);
 router.post('/', requireAuth, projectController.createProject);
 router.put('/:id', requireAuth, projectController.updateProject);
 router.delete('/:id', requireAuth, projectController.deleteProject);
+router.get('/:id/members', requireAuth, projectController.getProjectMembers);
 
 module.exports = router;

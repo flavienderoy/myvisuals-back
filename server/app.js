@@ -22,6 +22,7 @@ const auditLogRoutes = require('./routes/auditLogRoutes');
 const smartFolderRoutes = require('./routes/smartFolderRoutes');
 const permissionRoutes = require('./routes/permissionRoutes');
 const annotationRoutes = require('./routes/annotationRoutes');
+const teamRoutes = require('./routes/teamRoutes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./swaggerOptions');
@@ -82,6 +83,7 @@ app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/smart-folders', smartFolderRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/annotations', annotationRoutes);
+app.use('/api/teams', teamRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

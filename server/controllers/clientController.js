@@ -1,14 +1,16 @@
 const supabase = require('../config/supabase');
 const { getPaginationParams, buildPaginatedResponse } = require('../utils/pagination');
+const resolveStudioId = require('../utils/resolveStudioId');
 
 exports.getClients = async (req, res) => {
     try {
+        const ownerId = await resolveStudioId(req.user.id);
         const pagination = getPaginationParams(req.query);
 
         let query = supabase
             .from('clients')
             .select('*', pagination.hasPagination ? { count: 'exact' } : undefined)
-            .eq('owner_id', req.user.id)
+            .eq('owner_id', ownerId)
             .order('created_at', { ascending: false });
 
         if (pagination.hasPagination) query = query.range(pagination.from, pagination.to);
@@ -23,11 +25,12 @@ exports.getClients = async (req, res) => {
 
 exports.getClientById = async (req, res) => {
     try {
+        const ownerId = await resolveStudioId(req.user.id);
         const { data, error } = await supabase
             .from('clients')
             .select('*, projects(*)')
             .eq('id', req.params.id)
-            .eq('owner_id', req.user.id)
+            .eq('owner_id', ownerId)
             .single();
 
         if (error) throw error;
@@ -40,6 +43,7 @@ exports.getClientById = async (req, res) => {
 
 exports.createClient = async (req, res) => {
     try {
+        const ownerId = await resolveStudioId(req.user.id);
         const { name, description, logo_url, avatar_url, email } = req.body;
         const { data, error } = await supabase
             .from('clients')
@@ -50,7 +54,7 @@ exports.createClient = async (req, res) => {
                 avatar_url,
                 email: email ? email.trim().toLowerCase() : null,
                 invite_status: 'pending',
-                owner_id: req.user.id,
+                owner_id: ownerId,
             }])
             .select();
 
@@ -136,11 +140,12 @@ exports.acceptInvitation = async (req, res) => {
 
 exports.updateClient = async (req, res) => {
     try {
+        const ownerId = await resolveStudioId(req.user.id);
         const { data, error } = await supabase
             .from('clients')
             .update({ ...req.body, updated_at: new Date().toISOString() })
             .eq('id', req.params.id)
-            .eq('owner_id', req.user.id)
+            .eq('owner_id', ownerId)
             .select();
 
         if (error) throw error;
@@ -153,11 +158,12 @@ exports.updateClient = async (req, res) => {
 
 exports.deleteClient = async (req, res) => {
     try {
+        const ownerId = await resolveStudioId(req.user.id);
         const { error } = await supabase
             .from('clients')
             .delete()
             .eq('id', req.params.id)
-            .eq('owner_id', req.user.id);
+            .eq('owner_id', ownerId);
 
         if (error) throw error;
         res.json({ message: 'Client deleted successfully' });
