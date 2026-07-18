@@ -2,11 +2,15 @@ const express = require('express');
 const router = express.Router();
 const teamController = require('../controllers/teamController');
 const requireAuth = require('../middlewares/authMiddleware');
+const blockClients = require('../middlewares/blockClients');
 
-router.get('/', requireAuth, teamController.getTeamMembers);
-router.post('/invite', requireAuth, teamController.inviteMember);
-router.put('/:id', requireAuth, teamController.updateMember);
-router.delete('/:id', requireAuth, teamController.removeMember);
-router.get('/my-studio', requireAuth, teamController.getMyStudio);
+// Team management is studio-only (defense-in-depth alongside the front guard)
+router.use(requireAuth, blockClients);
+
+router.get('/', teamController.getTeamMembers);
+router.post('/invite', teamController.inviteMember);
+router.put('/:id', teamController.updateMember);
+router.delete('/:id', teamController.removeMember);
+router.get('/my-studio', teamController.getMyStudio);
 
 module.exports = router;
