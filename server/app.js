@@ -23,6 +23,7 @@ const smartFolderRoutes = require('./routes/smartFolderRoutes');
 const permissionRoutes = require('./routes/permissionRoutes');
 const annotationRoutes = require('./routes/annotationRoutes');
 const teamRoutes = require('./routes/teamRoutes');
+const publicRoutes = require('./routes/publicRoutes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./swaggerOptions');
@@ -84,6 +85,7 @@ app.use('/api/smart-folders', smartFolderRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/annotations', annotationRoutes);
 app.use('/api/teams', teamRoutes);
+app.use('/api/public', publicRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
