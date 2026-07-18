@@ -69,6 +69,28 @@ exports.createAnnotation = async (req, res) => {
             .eq('id', req.user.id)
             .single();
 
+        // Notify the project members, deep-linking to this comment on the image
+        try {
+            const { data: asset } = await supabase
+                .from('assets')
+                .select('project_id')
+                .eq('id', asset_id)
+                .single();
+            if (asset?.project_id) {
+                const { notifyProjectMembers } = require('../utils/notify');
+                await notifyProjectMembers(asset.project_id, req.user.id, {
+                    type: 'annotation',
+                    content,
+                    assetId: asset_id,
+                    // Deep-link to the root thread (a reply points at its parent)
+                    annotationId: parent_id || data[0].id,
+                    mentions: req.body.mentions,
+                });
+            }
+        } catch (e) {
+            console.error('annotation notify error:', e.message);
+        }
+
         res.status(201).json({ ...data[0], timestamp: data[0].created_at, author: author || null });
     } catch (error) {
         res.status(500).json({ error: error.message });

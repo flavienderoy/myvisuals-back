@@ -1,106 +1,86 @@
 const supabase = require('../config/supabase');
 
+// Trim a message to a short excerpt for the notification body.
+const excerpt = (text, n = 90) => {
+    if (!text) return '';
+    const t = String(text).replace(/\s+/g, ' ').trim();
+    return t.length > n ? `${t.slice(0, n - 1)}…` : t;
+};
+
 /**
- * Sends a notification to project members.
- * @param {string} projectId 
- * @param {string} senderId 
+ * Notify a project's members (studio owner, active team members, linked client)
+ * — except the actor — about an event, with enough context to deep-link.
+ *
+ * @param {string} projectId
+ * @param {string} actorId   - the user who triggered the event
  * @param {object} options
- * @param {string} options.type 'message', 'mention', 'status', 'annotation'
- * @param {string} options.title
- * @param {string} options.content
- * @param {string} options.link
- * @param {string[]} options.mentions Array of user IDs explicitly mentioned
+ * @param {'annotation'|'message'|'status'|'mention'} options.type
+ * @param {string} options.content        - raw text; stored as a short excerpt
+ * @param {string} [options.assetId]      - asset to open on click
+ * @param {string} [options.annotationId] - comment/thread to highlight on click
+ * @param {string[]} [options.mentions]   - explicitly mentioned user ids
  */
-async function notifyProjectMembers(projectId, senderId, options) {
+async function notifyProjectMembers(projectId, actorId, options) {
     try {
-        const { type, title, content, link, mentions } = options;
-        
-        // Fetch project to get owner and client's user_id, and project name
+        const { type, content, assetId = null, annotationId = null, mentions } = options;
+
         const { data: project } = await supabase
             .from('projects')
-            .select('owner_id, client_id, name, client:clients(user_id)')
+            .select('owner_id, client:clients(user_id)')
             .eq('id', projectId)
             .single();
+        if (!project) return;
 
-        let memberIds = [];
-        if (project) {
-            if (project.client && project.client.user_id) {
-                memberIds.push(project.client.user_id);
-            }
-            memberIds.push(project.owner_id);
-            
-            const { data: teamMembers } = await supabase
-                .from('team_members')
-                .select('user_id')
-                .eq('studio_id', project.owner_id)
-                .eq('status', 'active');
-                
-            if (teamMembers) {
-                memberIds.push(...teamMembers.map(tm => tm.user_id));
-            }
-        }
-        
-        // Remove sender and nulls
-        memberIds = [...new Set(memberIds)].filter(id => id && id !== senderId);
-        console.log("notifyProjectMembers - memberIds:", memberIds);
+        let memberIds = [project.owner_id, project.client?.user_id];
+        const { data: team } = await supabase
+            .from('team_members')
+            .select('user_id')
+            .eq('studio_id', project.owner_id)
+            .eq('status', 'active');
+        if (team) memberIds.push(...team.map((t) => t.user_id));
 
+        // Unique, drop nulls and the actor
+        memberIds = [...new Set(memberIds)].filter((id) => id && id !== actorId);
         if (memberIds.length === 0) return;
 
-        const { data: profiles, error: profErr } = await supabase
+        const { data: profiles } = await supabase
             .from('profiles')
             .select('id, notification_preferences')
             .in('id', memberIds);
-            
-        console.log("notifyProjectMembers - profiles:", profiles, "Error:", profErr);
-            
-        const notificationsToInsert = [];
-        const isMentionList = (mentions && Array.isArray(mentions)) ? mentions : [];
-        const projectName = project?.name || 'un projet';
-        
-        (profiles || []).forEach(profile => {
+
+        const mentionSet = new Set(Array.isArray(mentions) ? mentions : []);
+        const body = excerpt(content);
+
+        const rows = [];
+        (profiles || []).forEach((profile) => {
             const prefs = profile.notification_preferences || {};
-            
-            if (isMentionList.includes(profile.id)) {
-                if (prefs.mentions_in_app !== false) {
-                    notificationsToInsert.push({
-                        user_id: profile.id,
-                        type: 'mention',
-                        message: `Nouvelle mention dans le projet : ${projectName}`,
-                        project_id: projectId,
-                        asset_id: options.asset_id || null
-                    });
-                }
-            } else {
-                // Check preferences for other types
-                let shouldNotify = true;
-                if (type === 'message' && prefs.messages_in_app === false) shouldNotify = false;
-                if (type === 'status' && prefs.projects_in_app === false) shouldNotify = false;
-                if (type === 'annotation' && prefs.projects_in_app === false) shouldNotify = false;
-                
-                if (shouldNotify) {
-                    notificationsToInsert.push({
-                        user_id: profile.id,
-                        type: type,
-                        message: content || `Notification du projet "${projectName}".`,
-                        project_id: projectId,
-                        asset_id: options.asset_id || null
-                    });
-                }
+            const isMention = mentionSet.has(profile.id);
+
+            // Respect per-user preferences
+            if (isMention) {
+                if (prefs.mentions_in_app === false) return;
+            } else if (type === 'message' && prefs.messages_in_app === false) {
+                return;
+            } else if ((type === 'status' || type === 'annotation') && prefs.projects_in_app === false) {
+                return;
             }
+
+            rows.push({
+                user_id: profile.id,
+                actor_id: actorId,
+                type: isMention ? 'mention' : type,
+                message: body,
+                project_id: projectId,
+                asset_id: assetId,
+                annotation_id: annotationId,
+            });
         });
-        
-        console.log("NOTIFICATIONS TO INSERT:", notificationsToInsert);
-        
-        if (notificationsToInsert.length > 0) {
-            const { error: insertErr } = await supabase.from('notifications').insert(notificationsToInsert);
-            if (insertErr) {
-                console.error("Error inserting notifications:", insertErr);
-            } else {
-                console.log("Successfully inserted notifications.");
-            }
+
+        if (rows.length) {
+            await supabase.from('notifications').insert(rows);
         }
     } catch (e) {
-        console.error("Error in notifyProjectMembers:", e);
+        console.error('notifyProjectMembers error:', e.message);
     }
 }
 

@@ -193,9 +193,8 @@ exports.updateAsset = async (req, res) => {
             
             await notifyProjectMembers(asset.project_id, req.user.id, {
                 type: 'status',
-                title: 'Mise à jour du visuel',
                 content: `Le visuel "${asset.name}" a ${statusText}.`,
-                link: `/studio/projects/${asset.project_id}?asset=${asset.id}`
+                assetId: asset.id,
             });
         }
 
@@ -266,10 +265,10 @@ exports.addAnnotation = async (req, res) => {
         if (assetResponse.data) {
             await notifyProjectMembers(assetResponse.data.project_id, req.user.id, {
                 type: 'annotation',
-                title: 'Nouveau commentaire',
-                content: `Nouveau commentaire ajouté sur un visuel.`,
-                link: `/studio/projects/${assetResponse.data.project_id}?asset=${req.params.id}`,
-                mentions: mentions
+                content: data[0].content,
+                assetId: req.params.id,
+                annotationId: data[0].parent_id || data[0].id,
+                mentions,
             });
         }
 

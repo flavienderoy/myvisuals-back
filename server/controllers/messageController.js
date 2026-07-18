@@ -59,14 +59,12 @@ exports.sendMessage = async (req, res) => {
 
         if (error) throw error;
         
-        // Use the new notify helper
+        // Notify project members with the actual message excerpt (deep-linkable)
         const { notifyProjectMembers } = require('../utils/notify');
         await notifyProjectMembers(req.params.projectId, req.user.id, {
             type: 'message',
-            title: 'Nouveau message',
-            content: `Nouveau message dans le chat du projet.`,
-            link: `/studio/projects/${req.params.projectId}`,
-            mentions: mentions
+            content,
+            mentions,
         });
 
         res.status(201).json(data[0]);

@@ -11,7 +11,19 @@ exports.getNotifications = async (req, res) => {
             .limit(50);
 
         if (error) throw error;
-        res.json(data);
+
+        // Resolve the actor (who triggered each notification) separately
+        const actorIds = [...new Set((data || []).map((n) => n.actor_id).filter(Boolean))];
+        let actorsById = {};
+        if (actorIds.length) {
+            const { data: actors } = await supabase
+                .from('profiles')
+                .select('id, name, avatar_url')
+                .in('id', actorIds);
+            actorsById = Object.fromEntries((actors || []).map((a) => [a.id, a]));
+        }
+
+        res.json((data || []).map((n) => ({ ...n, actor: n.actor_id ? actorsById[n.actor_id] || null : null })));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
