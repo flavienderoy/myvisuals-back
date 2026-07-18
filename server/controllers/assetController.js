@@ -2,6 +2,7 @@ const archiver = require('archiver');
 const supabase = require('../config/supabase');
 const { toWebp, makeWatermarkedPreview } = require('../utils/imageProcessor');
 const { getPaginationParams, buildPaginatedResponse } = require('../utils/pagination');
+const { notifyProjectMembers } = require('../utils/notify');
 
 const BUCKET = 'assets';
 const PREVIEW_TTL = 3600; // 1h — signed URL lifetime for watermarked previews
@@ -182,6 +183,22 @@ exports.updateAsset = async (req, res) => {
 
         if (error) throw error;
         if (!data.length) return res.status(404).json({ error: 'Asset not found' });
+        
+        // Notify members on status change
+        if (req.body.status) {
+            const asset = data[0];
+            let statusText = asset.status;
+            if (asset.status === 'approved') statusText = 'été validé';
+            else if (asset.status === 'needs_review') statusText = 'besoin de retouches';
+            
+            await notifyProjectMembers(asset.project_id, req.user.id, {
+                type: 'status',
+                title: 'Mise à jour du visuel',
+                content: `Le visuel "${asset.name}" a ${statusText}.`,
+                link: `/studio/projects/${asset.project_id}?asset=${asset.id}`
+            });
+        }
+
         res.json(data[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -217,7 +234,7 @@ exports.deleteAsset = async (req, res) => {
 // Add annotation to an asset
 exports.addAnnotation = async (req, res) => {
     try {
-        const { content, x_position, y_position, timestamp } = req.body;
+        const { content, x_position, y_position, timestamp, mentions } = req.body;
 
         const row = {
             asset_id: req.params.id,
@@ -245,6 +262,17 @@ exports.addAnnotation = async (req, res) => {
             .single();
 
         // Expose created_at as `timestamp` so the UI can show when it was added
+        const assetResponse = await supabase.from('assets').select('project_id').eq('id', req.params.id).single();
+        if (assetResponse.data) {
+            await notifyProjectMembers(assetResponse.data.project_id, req.user.id, {
+                type: 'annotation',
+                title: 'Nouveau commentaire',
+                content: `Nouveau commentaire ajouté sur un visuel.`,
+                link: `/studio/projects/${assetResponse.data.project_id}?asset=${req.params.id}`,
+                mentions: mentions
+            });
+        }
+
         res.status(201).json({ ...data[0], timestamp: data[0].created_at, author: author || null });
     } catch (error) {
         res.status(500).json({ error: error.message });

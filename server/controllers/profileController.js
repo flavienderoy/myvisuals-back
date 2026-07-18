@@ -20,15 +20,21 @@ exports.getProfile = async (req, res) => {
 // Update profile
 exports.updateProfile = async (req, res) => {
     try {
-        const { name, organization, avatar_url } = req.body;
+        const { name, organization, avatar_url, notification_preferences } = req.body;
+        const updateData = {
+            name,
+            organization,
+            avatar_url,
+            updated_at: new Date().toISOString(),
+        };
+        
+        if (notification_preferences !== undefined) {
+            updateData.notification_preferences = notification_preferences;
+        }
+
         const { data, error } = await supabase
             .from('profiles')
-            .update({
-                name,
-                organization,
-                avatar_url,
-                updated_at: new Date().toISOString(),
-            })
+            .update(updateData)
             .eq('id', req.user.id)
             .select();
 
