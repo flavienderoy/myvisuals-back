@@ -43,7 +43,7 @@ exports.getAnnotations = async (req, res) => {
 
 exports.createAnnotation = async (req, res) => {
     try {
-        const { asset_id, content, x_position, y_position, parent_id } = req.body;
+        const { asset_id, content, x_position, y_position, parent_id, version_id } = req.body;
 
         const insertPayload = {
                 asset_id,
@@ -53,6 +53,8 @@ exports.createAnnotation = async (req, res) => {
                 x: parent_id ? null : x_position,
                 y: parent_id ? null : y_position,
                 parent_id: parent_id || null,
+                // Which version the comment belongs to (null = the original image)
+                version_id: version_id || null,
             };
 
         const { data, error } = await supabase
