@@ -305,7 +305,8 @@ exports.uploadVersion = async (req, res) => {
                 file_path: filePath,
                 preview_path: previewPath,
                 created_by: req.user.id,
-                comment: req.body.comment || null,
+                // asset_versions has no `comment` column — keep it in metadata
+                metadata: req.body.comment ? { comment: req.body.comment } : {},
             }])
             .select();
 
