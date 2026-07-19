@@ -88,6 +88,13 @@ exports.createAnnotation = async (req, res) => {
                     annotationId: parent_id || data[0].id,
                     mentions: req.body.mentions,
                 });
+
+                const { logActivity } = require('../utils/logActivity');
+                await logActivity(asset.project_id, req.user.id, {
+                    type: 'comment',
+                    description: parent_id ? 'a répondu à un commentaire' : 'a laissé un commentaire',
+                    metadata: { asset_id },
+                });
             }
         } catch (e) {
             console.error('annotation notify error:', e.message);

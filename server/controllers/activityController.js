@@ -16,7 +16,19 @@ exports.getActivities = async (req, res) => {
 
         const { data, error } = await query;
         if (error) throw error;
-        res.json(data);
+
+        // Attach the actor (name/avatar) — resolved separately (no reliable embed)
+        const userIds = [...new Set((data || []).map((a) => a.user_id).filter(Boolean))];
+        let byId = {};
+        if (userIds.length) {
+            const { data: profs } = await supabase
+                .from('profiles')
+                .select('id, name, avatar_url')
+                .in('id', userIds);
+            byId = Object.fromEntries((profs || []).map((p) => [p.id, p]));
+        }
+
+        res.json((data || []).map((a) => ({ ...a, actor: a.user_id ? byId[a.user_id] || null : null })));
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

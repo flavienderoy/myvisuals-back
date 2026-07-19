@@ -3,6 +3,7 @@ const supabase = require('../config/supabase');
 const { toWebp, makeWatermarkedPreview } = require('../utils/imageProcessor');
 const { getPaginationParams, buildPaginatedResponse } = require('../utils/pagination');
 const { notifyProjectMembers } = require('../utils/notify');
+const { logActivity } = require('../utils/logActivity');
 
 const BUCKET = 'assets';
 const PREVIEW_TTL = 3600; // 1h — signed URL lifetime for watermarked previews
@@ -166,6 +167,13 @@ exports.createAsset = async (req, res) => {
             .select();
 
         if (error) throw error;
+
+        await logActivity(projectId, req.user.id, {
+            type: 'upload',
+            description: `a ajouté « ${data[0].name} »`,
+            metadata: { asset_id: data[0].id },
+        });
+
         res.status(201).json({ ...data[0], url: await signPreview(data[0]) });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -195,6 +203,14 @@ exports.updateAsset = async (req, res) => {
                 type: 'status',
                 content: `Le visuel "${asset.name}" a ${statusText}.`,
                 assetId: asset.id,
+            });
+
+            await logActivity(asset.project_id, req.user.id, {
+                type: asset.status === 'approved' ? 'approve' : 'reject',
+                description: asset.status === 'approved'
+                    ? `a validé « ${asset.name} »`
+                    : `a demandé des retouches sur « ${asset.name} »`,
+                metadata: { asset_id: asset.id },
             });
         }
 
@@ -311,6 +327,20 @@ exports.uploadVersion = async (req, res) => {
             .select();
 
         if (error) throw error;
+
+        const { data: parentAsset } = await supabase
+            .from('assets')
+            .select('project_id, name')
+            .eq('id', req.params.id)
+            .single();
+        if (parentAsset?.project_id) {
+            await logActivity(parentAsset.project_id, req.user.id, {
+                type: 'upload',
+                description: `a ajouté la version V${(count || 0) + 1} de « ${parentAsset.name} »`,
+                metadata: { asset_id: req.params.id },
+            });
+        }
+
         res.status(201).json({ ...data[0], url: await signPreview(data[0]) });
     } catch (error) {
         res.status(500).json({ error: error.message });

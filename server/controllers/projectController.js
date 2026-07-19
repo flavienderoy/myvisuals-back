@@ -108,6 +108,13 @@ exports.createProject = async (req, res) => {
             .select('*, client:clients(name, logo_url)');
 
         if (error) throw error;
+
+        const { logActivity } = require('../utils/logActivity');
+        await logActivity(data[0].id, req.user.id, {
+            type: 'project_created',
+            description: `a créé le projet « ${data[0].name} »`,
+        });
+
         res.status(201).json(data[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
