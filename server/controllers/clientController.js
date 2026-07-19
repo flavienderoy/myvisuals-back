@@ -132,6 +132,16 @@ exports.acceptInvitation = async (req, res) => {
             .select();
 
         if (error) throw error;
+
+        // Add the client to the conversation channels of the projects they now access
+        try {
+            const { data: projects } = await supabase.from('projects').select('id').eq('client_id', req.params.id);
+            const { addUserToProjectChannels } = require('../utils/conversationHelpers');
+            await addUserToProjectChannels(req.user.id, (projects || []).map((p) => p.id));
+        } catch (e) {
+            console.error('client channel sync error:', e.message);
+        }
+
         res.json(data[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });

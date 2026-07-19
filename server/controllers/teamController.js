@@ -79,6 +79,16 @@ exports.inviteMember = async (req, res) => {
             .single();
 
         if (error) throw error;
+
+        // Add the new member to the studio's project channels
+        try {
+            const { data: projects } = await supabase.from('projects').select('id').eq('owner_id', req.user.id);
+            const { addUserToProjectChannels } = require('../utils/conversationHelpers');
+            await addUserToProjectChannels(userId, (projects || []).map((p) => p.id));
+        } catch (e) {
+            console.error('team channel sync error:', e.message);
+        }
+
         res.status(201).json(data);
     } catch (error) {
         res.status(500).json({ error: error.message });

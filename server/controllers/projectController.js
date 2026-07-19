@@ -115,6 +115,14 @@ exports.createProject = async (req, res) => {
             description: `a créé le projet « ${data[0].name} »`,
         });
 
+        // Create the project's conversation channel
+        try {
+            const { ensureProjectChannel } = require('../utils/conversationHelpers');
+            await ensureProjectChannel(data[0].id);
+        } catch (e) {
+            console.error('ensureProjectChannel error:', e.message);
+        }
+
         res.status(201).json(data[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
