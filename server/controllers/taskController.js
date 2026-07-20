@@ -1,4 +1,5 @@
 const supabase = require('../config/supabase');
+const { logActivity } = require('../utils/logActivity');
 
 // Get tasks for a project or assigned to user
 exports.getTasks = async (req, res) => {
@@ -56,6 +57,15 @@ exports.updateTask = async (req, res) => {
 
         if (error) throw error;
         if (!data.length) return res.status(404).json({ error: 'Task not found' });
+        
+        // Log activity if status changed to done
+        if (req.body.status === 'done') {
+            await logActivity(data[0].project_id, req.user.id, {
+                type: 'approve',
+                description: `a terminé la tâche "${data[0].title}"`
+            });
+        }
+
         res.json(data[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });

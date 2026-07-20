@@ -93,7 +93,19 @@ exports.getMessages = async (req, res) => {
         if (error) throw error;
 
         const senders = await attachProfiles(data, (data || []).map((m) => m.sender_id));
-        res.json((data || []).map((m) => ({ ...m, sender: senders[m.sender_id] || null })));
+
+        // Fetch participants' last_read_at to compute read receipts
+        const { data: participants } = await supabase
+            .from('conversation_participants')
+            .select('user_id, last_read_at')
+            .eq('conversation_id', req.params.id);
+        const otherReaders = (participants || []).filter((p) => p.user_id !== req.user.id && p.last_read_at);
+
+        res.json((data || []).map((m) => ({
+            ...m,
+            sender: senders[m.sender_id] || null,
+            read_by: otherReaders.filter((p) => new Date(p.last_read_at) >= new Date(m.created_at)).map((p) => p.user_id),
+        })));
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

@@ -1,6 +1,7 @@
 const supabase = require('../config/supabase');
 const { getPaginationParams, buildPaginatedResponse } = require('../utils/pagination');
 const resolveStudioId = require('../utils/resolveStudioId');
+const { logActivity } = require('../utils/logActivity');
 
 exports.getProjects = async (req, res) => {
     try {
@@ -122,6 +123,11 @@ exports.createProject = async (req, res) => {
         } catch (e) {
             console.error('ensureProjectChannel error:', e.message);
         }
+
+        await logActivity(data[0].id, req.user.id, {
+            type: 'project_created',
+            description: `a créé le projet ${name}`
+        });
 
         res.status(201).json(data[0]);
     } catch (error) {
