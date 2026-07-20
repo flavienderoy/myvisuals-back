@@ -18,12 +18,13 @@ exports.getLooks = async (req, res) => {
 
 exports.createLook = async (req, res) => {
     try {
-        const { name, position } = req.body;
+        const { name, position, parent_id } = req.body;
         const { data, error } = await supabase
             .from('looks')
             .insert([{
                 name,
                 project_id: req.params.projectId,
+                parent_id: parent_id || null,
                 position: position || 0,
             }])
             .select();
