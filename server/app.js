@@ -53,13 +53,18 @@ app.use(helmet({
 }));
 
 // Rate Limiting: protect against brute-force and DDoS
-// In a real production app, consider higher limits for dashboard users or disabling for local dev.
+const isDev = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: process.env.NODE_ENV === 'development' ? 5000 : 500, // max 500 requests per windowMs per IP (5000 in dev)
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    max: isDev ? 10000 : 1000, // generous limits — the dashboard fires many parallel calls on load
+    standardHeaders: true,
+    legacyHeaders: false,
     message: { error: 'Too many requests, please try again later.' },
+    skip: isDev ? (req) => {
+        // Never rate-limit localhost during development
+        const ip = req.ip || req.connection?.remoteAddress || '';
+        return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+    } : undefined,
 });
 app.use('/api/', apiLimiter);
 
