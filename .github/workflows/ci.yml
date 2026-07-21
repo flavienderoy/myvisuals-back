@@ -77,6 +77,29 @@ jobs:
         run: docker build -t visuals-api:ci .
       - name: Verify Docker image
         run: docker images visuals-api:ci
+      # Smoke test: actually BOOT the container and hit /health.
+      # `docker build` alone never runs the app, so a missing runtime file
+      # (e.g. an un-COPYed source dir) would pass build but crash on Cloud Run.
+      - name: Smoke test — boot container & check /health
+        run: |
+          docker run -d --name visuals-api-smoke -p 8080:8080 \
+            -e NODE_ENV=production \
+            -e SUPABASE_URL=https://placeholder.supabase.co \
+            -e SUPABASE_SERVICE_ROLE_KEY=placeholder \
+            visuals-api:ci
+          echo "Waiting for the app to start…"
+          for i in $(seq 1 15); do
+            if curl -fsS http://localhost:8080/health >/dev/null 2>&1; then
+              echo "✅ /health responded — container boots correctly"
+              docker rm -f visuals-api-smoke >/dev/null
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "❌ Container failed to serve /health within 30s — dumping logs:"
+          docker logs visuals-api-smoke || true
+          docker rm -f visuals-api-smoke >/dev/null
+          exit 1
 
   # ─────────────────────────────────
   # Job 4: Deploy backend (Google Cloud Run)

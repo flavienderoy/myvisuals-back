@@ -27,10 +27,12 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY package.json ./
 COPY app.js ./
 COPY server.js ./
+COPY swaggerOptions.js ./
 COPY config/ ./config/
 COPY controllers/ ./controllers/
 COPY middlewares/ ./middlewares/
 COPY routes/ ./routes/
+COPY utils/ ./utils/
 COPY scripts/ ./scripts/
 
 # Switch to non-root user

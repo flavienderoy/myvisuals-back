@@ -49,3 +49,6 @@ coverage/
 *.local
 tmp/
 temp/
+
+# Nested front-end repo (separate git repo: myvisuals-client)
+client/
