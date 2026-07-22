@@ -1,4 +1,4 @@
-const { supabase } = require('../config/supabase');
+const supabase = require('../config/supabase');
 const { Pool } = require('pg');
 
 // Optional direct DB connection to demonstrate parameterized queries

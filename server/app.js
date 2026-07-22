@@ -32,6 +32,9 @@ const swaggerSpecs = require('./swaggerOptions');
 
 const app = express();
 
+// Trust reverse proxies (Google Cloud Run, Vercel, Nginx)
+app.set('trust proxy', 1);
+
 // ─── General Middleware ────────────────────────────────
 app.use(cors({
     origin: [
