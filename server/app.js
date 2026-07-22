@@ -25,6 +25,7 @@ const annotationRoutes = require('./routes/annotationRoutes');
 const teamRoutes = require('./routes/teamRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const conversationRoutes = require('./routes/conversationRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./swaggerOptions');
@@ -93,6 +94,7 @@ app.use('/api/annotations', annotationRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/conversations', conversationRoutes);
+app.use('/api/auth', authRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
