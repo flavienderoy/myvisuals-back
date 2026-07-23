@@ -1,268 +1,263 @@
-# DOSSIER TECHNIQUE — Visuals.co
-## Titre RNCP 39583 — Expert en Développement Logiciel (Niveau 7)
-### Bloc 2 : Concevoir et développer des applications logicielles
+# Dossier Technique — Visuals.co
 
-**Candidat :** Flavien Deroy  
-**Formation :** Expert en Développement Logiciel  
-**Projet :** Visuals.co — Plateforme SaaS de gestion et livraison de contenus visuels  
-**Date :** Juillet 2026
+> **Titre RNCP 39583 — Expert en Développement Logiciel (Niveau 7)**
+> **Bloc 2 — Concevoir et développer des applications logicielles**
 
----
-
-# SOMMAIRE
-
-1. [Introduction et Contexte](#1-introduction-et-contexte)
-2. [Cahier des Charges Fonctionnel](#2-cahier-des-charges-fonctionnel)
-3. [Choix Techniques et Architecturaux](#3-choix-techniques-et-architecturaux)
-4. [Architecture Technique](#4-architecture-technique)
-5. [Modélisation de la Base de Données](#5-modélisation-de-la-base-de-données)
-6. [Diagrammes UML](#6-diagrammes-uml)
-7. [Développement Frontend](#7-développement-frontend)
-8. [Développement Backend](#8-développement-backend)
-9. [Authentification et Sécurité](#9-authentification-et-sécurité)
-10. [Gestion des Fichiers (Storage)](#10-gestion-des-fichiers-storage)
-11. [Tests et Qualité](#11-tests-et-qualité)
-12. [Accessibilité (RGAA / ARIA)](#12-accessibilité-rgaa--aria)
-13. [CI/CD et DevOps](#13-cicd-et-devops)
-14. [Documentation API (Swagger)](#14-documentation-api-swagger)
-15. [Déploiement](#15-déploiement)
-16. [Bilan et Perspectives](#16-bilan-et-perspectives)
-17. [Annexes](#17-annexes)
+| | |
+|---|---|
+| **Candidat** | Flavien Deroy |
+| **Projet** | Visuals.co — Plateforme SaaS de gestion et de livraison de contenus visuels |
+| **Stack** | React 19 · Express 5 · PostgreSQL / Supabase · Docker · AWS |
+| **Dépôts** | `myvisuals-client` (front) · `myvisuals-back` (API) |
+| **Date** | Juillet 2026 |
 
 ---
 
-# 1. Introduction et Contexte
+## Sommaire
 
-## 1.1 Présentation du projet
-> Comment concevoir et développer une application web full-stack performante, sécurisée et accessible, permettant à un professionnel de l'image de gérer l'intégralité de son cycle de production — de l'upload des médias à la livraison client — au sein d'une même plateforme ?
+1. [Table de conformité RNCP Bloc 2](#0-table-de-conformité-rncp-bloc-2)
+2. [Introduction et contexte](#1-introduction-et-contexte)
+3. [Cahier des charges fonctionnel](#2-cahier-des-charges-fonctionnel)
+4. [Choix techniques, frameworks et paradigmes](#3-choix-techniques-frameworks-et-paradigmes)
+5. [Architecture logicielle et maintenabilité](#4-architecture-logicielle-et-maintenabilité)
+6. [Modélisation de la base de données](#5-modélisation-de-la-base-de-données)
+7. [Diagrammes UML](#6-diagrammes-uml)
+8. [Développement Frontend & Prototype (C2.2.1)](#7-développement-frontend--prototype-c221)
+9. [Développement Backend (C2.2.3)](#8-développement-backend-c223)
+10. [Sécurité applicative](#9-sécurité-applicative)
+11. [Critères de qualité et de performance](#10-critères-de-qualité-et-de-performance)
+12. [Stratégie de tests (C2.2.2)](#11-stratégie-de-tests-c222)
+13. [Accessibilité & RGPD](#12-accessibilité--rgpd)
+14. [CI/CD, conteneurisation & déploiement](#13-cicd-conteneurisation--déploiement)
+15. [Cahier de recettes (C2.3.1)](#14-cahier-de-recettes-c231)
+16. [Plan de correction des bogues](#15-plan-de-correction-des-bogues)
+17. [Historique des versions](#16-historique-des-versions)
+18. [Manuels (déploiement, utilisation, mise à jour)](#17-manuels)
+19. [Bilan et perspectives](#18-bilan-et-perspectives)
+20. [Annexes](#annexes)
 
-## 1.3 Objectifs
+---
 
-- Offrir un **Dashboard Studio** complet pour le professionnel (gestion de projets, clients, assets, facturation)
-- Proposer un **Espace Client** dédié pour la consultation et le téléchargement des livrables
-- Fournir un **Espace Client immersif** permettant la présentation des visuels dans un environnement haut de gamme
-- Garantir la **sécurité** des données et des fichiers (authentification JWT, RLS, CORS)
-- Assurer l'**accessibilité** selon les normes RGAA/WCAG
-- Mettre en place une **chaîne CI/CD** automatisée pour le déploiement continu
+## 0. Table de conformité RNCP Bloc 2
 
-## 1.4 Public cible
+Le règlement de certification impose **16 éléments** dans le livrable écrit et **4 compétences éliminatoires**. Cette table renvoie chaque exigence à la section qui la traite.
+
+### Éléments du livrable attendu
+
+| # | Élément exigé | Section |
+|---|---------------|---------|
+| 1 | Protocole de déploiement continu (CD) | [§13.2](#132-déploiement-continu-cd) |
+| 2 | Critères de qualité et de performance | [§10](#10-critères-de-qualité-et-de-performance) |
+| 3 | Protocole d'intégration continue (CI) | [§13.1](#131-intégration-continue-ci) |
+| 4 | Architecture structurée / maintenabilité | [§4](#4-architecture-logicielle-et-maintenabilité) |
+| 5 | Présentation d'un prototype | [§7.5](#75-prototype-et-ergonomie-c221) |
+| 6 | Frameworks et paradigmes de développement | [§3](#3-choix-techniques-frameworks-et-paradigmes) |
+| 7 | Jeu de tests unitaires d'une fonctionnalité | [§11.2](#112-tests-unitaires-frontend) |
+| 8 | Mesures de sécurité | [§9](#9-sécurité-applicative) |
+| 9 | Accessibilité (situation de handicap) | [§12.1](#121-accessibilité-rgaa--wcag) |
+| 10 | Historique des versions | [§16](#16-historique-des-versions) |
+| 11 | Dernière version fonctionnelle et viable | [§18](#18-bilan-et-perspectives) |
+| 12 | Cahier de recettes | [§14](#14-cahier-de-recettes-c231) |
+| 13 | Plan de correction des bogues | [§15](#15-plan-de-correction-des-bogues) |
+| 14 | Manuel de déploiement | [§17.1](#171-manuel-de-déploiement) |
+| 15 | Manuel d'utilisation | [§17.2](#172-manuel-dutilisation) |
+| 16 | Manuel de mise à jour | [§17.3](#173-manuel-de-mise-à-jour) |
+
+### Compétences éliminatoires
+
+| Compétence | Intitulé | Section |
+|------------|----------|---------|
+| **C2.2.1** | Concevoir un prototype (ergonomie, équipements ciblés, sécurité) | [§7.5](#75-prototype-et-ergonomie-c221) |
+| **C2.2.2** | Développer un harnais de test unitaire (prévention des régressions) | [§11](#11-stratégie-de-tests-c222) |
+| **C2.2.3** | Développer un logiciel évolutif, sécurisé et accessible | [§8](#8-développement-backend-c223) · [§9](#9-sécurité-applicative) |
+| **C2.3.1** | Élaborer le cahier de recette (scénarios et résultats attendus) | [§14](#14-cahier-de-recettes-c231) |
+
+---
+
+## 1. Introduction et contexte
+
+### 1.1 Problématique
+
+> Comment concevoir une application web full-stack performante, sécurisée et accessible, permettant à un professionnel de l'image de gérer l'intégralité de son cycle de production — de l'upload des médias à la livraison client — au sein d'une même plateforme ?
+
+Visuals.co est une plateforme SaaS B2B destinée aux studios photo et vidéo. Elle centralise la gestion de projets, l'organisation des médias, la collaboration avec les clients et la livraison des livrables finaux.
+
+### 1.2 Objectifs
+
+- **Dashboard Studio** complet : projets, clients, assets, facturation, suivi du temps.
+- **Espace Client** dédié : consultation, téléchargement des livrables, messagerie.
+
+- **Sécurité** des données et fichiers : JWT, Row Level Security (RLS), CORS, Helmet.
+- **Accessibilité** conforme RGAA 4.1 / WCAG 2.1 AA.
+- **Chaîne CI/CD** automatisée pour un déploiement continu et fiable.
+
+### 1.3 Public cible
 
 | Rôle | Description | Accès |
 |------|-------------|-------|
-| **Studio** | Photographe, vidéaste, DA — le créateur de contenu | Dashboard complet, gestion projets/clients/factures |
-| **Client** | Entreprise ou particulier commanditaire | Espace client, consultation, téléchargement, messagerie |
+| **Studio** | Photographe, vidéaste, DA — créateur de contenu | Dashboard complet (projets, clients, factures) |
+| **Client** | Entreprise ou particulier commanditaire | Consultation, téléchargement, annotations, messagerie |
+
 
 ---
 
-# 2. Cahier des Charges Fonctionnel
+## 2. Cahier des charges fonctionnel
 
-## 2.1 Fonctionnalités principales
+### 2.1 Fonctionnalités principales
 
-### Dashboard Studio
-- Tableau de bord avec KPIs (projets en cours, clients, tâches)
-- Gestion CRUD des projets (création, édition, suppression)
-- Gestion des clients (fiche client, logo, historique)
-- Upload et organisation des assets (images, vidéos)
-- Système de "Looks" (regroupement visuel des assets par séries)
-- Annotations collaboratives sur les images (coordonnées x/y)
-- Versioning des assets (historique des modifications)
-- Génération de factures PDF (SmartInvoice via jsPDF)
-- Suivi du temps (TimeTracker)
-- Moodboards interactifs
-- Smart Folders (dossiers intelligents avec filtres)
-- Flux d'approbation (validation client)
+**Dashboard Studio**
+KPIs, CRUD projets et clients, upload/organisation des assets, système de « Looks » (séries), annotations collaboratives (coordonnées x/y), versioning des assets, factures PDF (jsPDF), suivi du temps, moodboards, Smart Folders hiérarchiques, flux d'approbation.
 
-### Espace Client
-- Inscription/connexion dédiée
-- Vue des projets assignés
-- Téléchargement des livrables
-- Messagerie intégrée avec le Studio
-- Dashboard de synthèse
+> 🖼️ **[CAPTURE À INSÉRER — Fig. 2.1]** — *Dashboard Studio (`/studio`) : vue d'ensemble avec les cartes KPI (projets en cours, clients, tâches) et la liste des projets. Dark Mode, résolution 1440 px, données réalistes (pas de données de démo vides).* → `./screens/01-dashboard-studio.png`
 
-### Espace Client
-- Galerie immersive (grille + vue liste)
-- Navigation plein écran
-- Détail de l'image avec métadonnées EXIF
-- Téléchargement individuel et en lot (ZIP)
+**Espace Client**
+Inscription dédiée, vue des projets assignés, téléchargement des livrables, messagerie intégrée, tickets d'annotation.
 
-### Fonctionnalités transversales
-- Authentification double rôle (Studio / Client) avec SIRET
-- Notifications en temps réel (Supabase Realtime)
-- Barre de commandes rapide (Command Bar, raccourci Ctrl+K)
-- Mode sombre natif
-- Animations fluides (Framer Motion, GSAP)
 
-## 2.2 Fonctionnalités exclues
+**Transversal**
+Authentification double rôle (Studio / Client) avec SIRET, notifications temps réel (Supabase Realtime), Command Bar (Ctrl+K), Dark Mode natif, animations (Framer Motion, GSAP).
 
-- **Système de paiement en ligne** : Initialement prévu, cette fonctionnalité a été retirée du périmètre en raison de la complexité juridique liée à la conformité e-commerce (PCI-DSS, CGV, droit de rétractation). La plateforme agit désormais comme un outil de livraison, non de vente.
+### 2.2 Périmètre exclu
+
+- **Paiement en ligne** : retiré du périmètre en raison de la complexité de conformité e-commerce (PCI-DSS, CGV, droit de rétractation). La plateforme est un outil de **livraison**, non de vente.
 
 ---
 
-# 3. Architecture et Choix Techniques
+## 3. Choix techniques, frameworks et paradigmes
 
-## 3.1 Stack technologique et Justifications de l'Architecture (MERN/SERN)
+### 3.1 Stack technologique (SERN)
 
-Le choix de l'architecture s'est porté sur une déclinaison moderne de la stack MERN (MongoDB, Express, React, Node) rebaptisée **SERN** (Supabase, Express, React, Node), privilégiant un modèle de données strictement relationnel et sécurisé.
+L'architecture retenue est une déclinaison moderne de la stack MERN, rebaptisée **SERN** (**S**upabase, **E**xpress, **R**eact, **N**ode), privilégiant un modèle de données strictement relationnel.
 
-### Le Frontend : React 19 & Vite
-- **React 19** : Ce choix n'est pas anodin. L'utilisation des tous derniers *Hooks* (comme `useTransition` ou le nouveau compilateur natif) permet d'optimiser radicalement le rendu des lourdes galeries d'images sans "jank" (saccades).
-- **Vite (ESBuild)** : En environnement de développement, Webpack prenait jusqu'à 15 secondes pour compiler le projet. Grâce à Vite, le temps de démarrage à froid est inférieur à 500ms, et le Hot Module Replacement (HMR) est quasi instantané, dopant la productivité.
+| Couche | Technologie | Version | Justification synthétique |
+|--------|-------------|---------|---------------------------|
+| Frontend | React + Vite | 19 / 7 | Rendu performant des galeries lourdes ; HMR quasi instantané (< 500 ms à froid) |
+| Styling | Tailwind CSS | 4 | Design system par variables, cohérence, purge automatique |
+| Backend | Express + Node.js | 5 / 20 LTS | Gestion native des promesses rejetées (Express 5), support long terme, `fetch` natif |
+| Base de données | PostgreSQL / Supabase | 15 | Modèle relationnel, RLS natif, Auth (GoTrue), Realtime, Storage S3 |
+| Tests | Vitest · Supertest · Playwright | — | Compatibilité Vite, tests HTTP d'intégration, E2E multi-navigateurs |
+| CI/CD | GitHub Actions | — | Intégration native, workflows YAML |
+| Conteneurisation | Docker | — | Reproductibilité, déploiement standardisé |
+| Hébergement | Vercel (front) · AWS ECR+ECS (back) | — | CDN mondial ; conteneurs scalables |
+| Documentation API | Swagger / OpenAPI | 3.0 | Standard, UI interactive, auto-documentation |
 
-### Le Backend : Express 5 & Node.js 20 LTS
-- L'utilisation de **Node.js 20 LTS** assure un support à long terme (sécurité) et un accès aux API natives (comme `fetch` natif, supprimant le besoin d'Axios côté serveur).
-- **Express.js version 5** (récemment stabilisée) apporte la gestion native des Promesses (Promises) non interceptées. Avant, si une erreur asynchrone survenait sans bloc `try/catch`, l'application Express plantait. Avec Express 5, l'erreur est élégamment passée au gestionnaire d'erreur global.
+**Pourquoi PostgreSQL plutôt que NoSQL ?** Le modèle de Visuals.co est profondément relationnel (un `Message` appartient à une `Conversation` liée à un `Projet`, lui-même rattaché à un `Client` géré par un `Profil`). Maintenir l'intégrité référentielle dans MongoDB aurait été coûteux et risqué. Supabase fournit clé en main l'Auth, le RLS, le Realtime et le Storage.
 
-### La Base de données : PostgreSQL & Supabase
-- **Pourquoi pas NoSQL (MongoDB) ?** Le modèle de données de Visuals.co est profondément relationnel. Un `Message` appartient à une `Conversation`, qui appartient à un `Projet`, qui appartient à un `Client`, qui est géré par un `Profil (Studio)`. Maintenir l'intégrité référentielle manuellement dans MongoDB (via Mongoose) aurait été risqué et coûteux en performances.
-- **Supabase** a été choisi plutôt que de gérer une base PostgreSQL "nue" sur AWS RDS, car il fournit clé en main :
-  1. Une gestion des utilisateurs complète (GoTrue).
-  2. Le Row Level Security (RLS) natif.
-  3. Des APIs temps réel (Realtime / WebSockets).
-  4. Un stockage d'objets S3-compatible (Storage).
+### 3.2 Paradigmes de développement
 
-## 3.2 Diagramme de Flux de Données (DFD)
+- **Programmation orientée composants** (Frontend) : UI déclarative, composition, réutilisation (Atomic Design, cf. §7.1).
+- **Architecture MVC** adaptée aux API REST (Backend) : séparation Routes / Controllers / accès données (cf. §8.1).
+- **Programmation asynchrone** : `async/await` et `Promise.all` pour paralléliser les I/O (BDD, Storage).
+- **Single Responsibility Principle** : découpage granulaire (1 fichier = 1 responsabilité).
+- **Defense in Depth** (sécurité) et **Secure by Default** (cf. §9).
+- **Test-Driven Development** sur les composants critiques (cf. §11).
 
-L'architecture suit un modèle N-Tiers asynchrone :
+### 3.3 Diagramme de flux de données (DFD)
+
+L'architecture suit un modèle N-Tiers asynchrone.
 
 ```mermaid
 sequenceDiagram
     participant Client as Navigateur (React)
     participant Vercel as CDN Vercel
-    participant Express as API Node.js (Cloud Run)
-    participant Supabase as BDD (PostgreSQL)
+    participant Express as API Node.js (AWS ECS)
+    participant Supabase as PostgreSQL
     participant Storage as Buckets S3
 
-    Client->>Vercel: GET / (Chargement du bundle JS)
+    Client->>Vercel: GET / (bundle JS)
     Vercel-->>Client: index.html + assets statiques
-    Client->>Express: GET /api/projects (avec JWT)
-    Express->>Supabase: SELECT * FROM projects (validation JWT)
-    Supabase-->>Express: JSON Result
-    Express-->>Client: 200 OK (Données du projet)
-    Client->>Storage: GET /bucket/image1.webp (Signed URL)
-    Storage-->>Client: Affichage de l'image
+    Client->>Express: GET /api/projects (JWT)
+    Express->>Supabase: SELECT (validation JWT + RLS)
+    Supabase-->>Express: JSON
+    Express-->>Client: 200 OK
+    Client->>Storage: GET image.webp (URL publique)
+    Storage-->>Client: Affichage
 ```
-
-| Couche | Technologie | Version | Justification |
-|--------|-------------|---------|---------------|
-| **Tests Front** | Vitest + React Testing Library | 3.2 / 16.3 | Compatibilité Vite native, API Jest-like, tests orientés utilisateur |
-| **Tests Back** | Vitest + Supertest | 3.2 / 7.1 | Tests d'intégration HTTP, assertions sur les réponses API |
-| **Tests E2E** | Playwright | — | Tests navigateur multi-plateformes, fiables, rapides |
-| **CI/CD** | GitHub Actions | — | Intégration native GitHub, workflows YAML, gratuit pour l'open-source |
-| **Conteneurisation** | Docker | — | Portabilité, reproductibilité, déploiement standardisé |
-| **Hébergement Front** | Vercel | — | Déploiement Vite natif, CDN mondial, preview branches |
-| **Hébergement Back** | AWS (ECR + ECS) | — | Scalabilité, fiabilité, infrastructure de production |
-| **Documentation API** | Swagger / OpenAPI | 3.0 | Standard industrie, UI interactive, auto-documentation |
 
 ---
 
-# 4. Architecture Technique
+## 4. Architecture logicielle et maintenabilité
 
-## 4.1 Schéma d'architecture globale
+### 4.1 Architecture en couches
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    UTILISATEUR                          │
-│               (Navigateur Web)                          │
-└───────────────────┬─────────────────────────────────────┘
-                    │ HTTPS
-                    ▼
-┌─────────────────────────────────────────────────────────┐
-│              COUCHE PRÉSENTATION                        │
-│                                                         │
-│  React 19 + Vite 7 + Tailwind CSS 4                    │
-│  ├── Pages : Landing, Studio, Client Portal          │
-│  ├── Context : AuthContext, DataContext                 │
-│  ├── Services : API (Axios), Supabase Client           │
-│  └── Hébergement : Vercel (CDN)                        │
-└───────────────────┬─────────────────────────────────────┘
-                    │ REST API (JWT Bearer Token)
-                    ▼
-┌─────────────────────────────────────────────────────────┐
-│               COUCHE MÉTIER (API)                       │
-│                                                         │
-│  Express.js 5 + Node.js 20                             │
-│  ├── 19 Controllers (CRUD complet)                     │
-│  ├── Middlewares : Auth (JWT), RBAC, CORS, Helmet      │
-│  ├── Rate Limiting : 500 req/15min (prod)              │
-│  ├── File Upload : Multer (memory) → Supabase Storage  │
-│  ├── Documentation : Swagger/OpenAPI 3.0               │
-│  └── Hébergement : AWS ECS (Docker)                    │
-└───────────────────┬─────────────────────────────────────┘
-                    │ SDK Supabase (Service Role Key)
-                    ▼
-┌─────────────────────────────────────────────────────────┐
-│              COUCHE DONNÉES                             │
-│                                                         │
-│  Supabase (PostgreSQL 15)                              │
-│  ├── 23 Tables relationnelles                          │
-│  ├── Row Level Security (RLS)                          │
-│  ├── Triggers (auto-création profil)                   │
-│  ├── Auth intégrée (JWT, sessions)                     │
-│  ├── Realtime (WebSockets)                             │
-│  └── Storage (buckets : assets, avatars, thumbnails)   │
-└─────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────┐
+│  PRÉSENTATION — React 19 + Vite 7 + Tailwind 4 │
+│  Pages · Contexts (Auth, Data) · Services API  │
+│  Hébergement : Vercel (CDN)                    │
+└───────────────────┬───────────────────────────┘
+                    │ REST API (JWT Bearer)
+┌───────────────────▼───────────────────────────┐
+│  MÉTIER (API) — Express 5 + Node 20            │
+│  20 controllers · 3 middlewares (Auth/RBAC/…)  │
+│  Helmet · CORS · Rate limiting · Multer+Sharp  │
+│  Swagger/OpenAPI · Hébergement : AWS ECS       │
+└───────────────────┬───────────────────────────┘
+                    │ SDK Supabase (Service Role)
+┌───────────────────▼───────────────────────────┐
+│  DONNÉES — Supabase (PostgreSQL 15)            │
+│  23 tables · RLS · Triggers · Auth · Realtime  │
+│  Storage (buckets : assets, avatars, thumbs)   │
+└───────────────────────────────────────────────┘
 ```
 
-## 4.2 Structure du projet
+### 4.2 Structure du projet
 
 ```
 Visuals.co/
-├── .github/workflows/ci.yml    # Pipeline CI/CD Backend
-├── client/                     # Frontend React (repo: myvisuals-client)
-│   ├── .github/workflows/ci.yml  # Pipeline CI/CD Frontend
+├── client/                    # Frontend React (repo myvisuals-client)
 │   ├── src/
-│   │   ├── components/
-│   │   │   ├── auth/           # ProtectedRoute
-│   │   │   ├── common/         # Sidebar, Modal, CommandBar, Loader...
-│   │   │   ├── landing/        # FaqSection, FeaturesGrid, Pricing...
-│   │   │   ├── client/         # ImmersiveGallery, ImageDetail...
-│   │   │   └── studio/         # Dashboard, ProjectDetail, SmartInvoice... (33 composants)
-│   │   ├── context/            # AuthContext, DataContext
-│   │   ├── hooks/              # useToast
-│   │   ├── layouts/            # MainLayout, ClientLayout, AuthLayout
-│   │   ├── pages/              # Studio, LandingPage, auth/, client/, profile/
-│   │   ├── services/           # 17 services API (Axios)
-│   │   └── utils/              # demoData, permissions
-│   ├── e2e/                    # Tests End-to-End (Playwright)
-│   └── package.json
-├── server/                     # Backend Express (repo: myvisuals-back)
-│   ├── config/                 # supabase.js
-│   ├── controllers/            # 19 controllers
-│   ├── middlewares/             # authMiddleware, roleMiddleware
-│   ├── routes/                 # 19 fichiers de routes
-│   ├── scripts/                # database_schema.sql, seed.js
-│   ├── __tests__/              # Tests API (Supertest/Vitest)
-│   ├── Dockerfile              # Conteneurisation
-│   └── package.json
-├── docs/                       # Documentation RNCP
-└── docker-compose.yml          # Orchestration locale
+│   │   ├── components/        # 41 composants (6 domaines)
+│   │   │   ├── auth/          # ProtectedRoute
+│   │   │   ├── common/        # Sidebar, Modal, CommandBar, Loader… (15)
+│   │   │   ├── landing/       # HeroSection, FeaturesGrid, Pricing… (8)
+│   │   │   ├── client/        # Espace client (1)
+
+│   │   │   └── studio/        # Dashboard, Kanban, SmartInvoice… (13)
+│   │   ├── context/           # AuthContext, DataContext
+│   │   ├── layouts/           # MainLayout, ClientLayout, AuthLayout
+│   │   ├── pages/             # 18 vues
+│   │   └── services/          # 19 services API (Axios)
+│   └── e2e/                   # Tests E2E (Playwright)
+├── server/                    # Backend Express (repo myvisuals-back)
+│   ├── controllers/           # 20 controllers
+│   ├── middlewares/           # authMiddleware, roleMiddleware, blockClients
+│   ├── routes/                # 20 fichiers de routes (~97 endpoints)
+│   ├── scripts/               # database_schema.sql + migrations séquentielles
+│   ├── __tests__/             # Tests API (Supertest/Vitest)
+│   └── Dockerfile
+├── docs/                      # Documentation RNCP
+└── docker-compose.yml
 ```
+
+### 4.3 Principes de maintenabilité
+
+- **Séparation stricte des responsabilités** : chaque domaine fonctionnel (auth, studio, client) est isolé côté front ; chaque ressource a son controller/route côté back.
+- **Migrations versionnées** : toute évolution de schéma passe par un fichier SQL séquentiel (`001_…` → `012_…`), jamais de modification directe en production.
+- **Conventions imposées** : ESLint + Prettier + Husky (pre-commit) garantissent un style homogène.
+- **Contrats stables** : l'API REST documentée via Swagger sert de contrat entre front et back.
 
 ---
 
-# 5. Modélisation Conceptuelle et Physique de la Base de Données
+## 5. Modélisation de la base de données
 
-La conception de la base de données est le cœur névralgique de Visuals.co. Avec 23 tables fortement normalisées (3ème Forme Normale - 3NF), PostgreSQL garantit la consistance absolue des données, empêchant toute création de "données orphelines".
+La base compte **23 tables** normalisées (3NF), dont les principales sont formalisées par des migrations séquentielles versionnées (`001_*.sql` → `012_*.sql`).
 
-## 5.1 Intégrité Référentielle et Clés UUID
+### 5.1 UUID et intégrité référentielle
 
-L'intégralité des clés primaires (Primary Keys) du système utilisent le format **UUID v4** (Universally Unique Identifier).
-Contrairement aux entiers auto-incrémentés (`id SERIAL`), l'utilisation des UUID apporte trois avantages majeurs :
-1. **Sécurité (Anti-Scraping)** : Il est impossible pour un visiteur de deviner le projet suivant. L'URL `api/projects/142` permettrait de deviner qu'il existe un projet `143`. Avec un UUID (`api/projects/a1b2...`), cette attaque par énumération est mathématiquement impossible.
-2. **Systèmes Distribués** : Le frontend peut générer un UUID valide sans avoir besoin d'attendre le retour de la base de données.
-3. **Fusions futures** : Si plusieurs bases de données devaient être fusionnées, aucun conflit d'ID n'apparaîtrait.
+Toutes les clés primaires utilisent le format **UUID v4**, apportant trois avantages :
 
-Toutes les relations entre les tables utilisent des contraintes `FOREIGN KEY` avec la clause `ON DELETE CASCADE`. Cela signifie que si un "Studio" supprime son compte, *absolument tout* le contenu associé (projets, clients, assets, messages, commentaires) est supprimé automatiquement par le moteur SQL en cascade, évitant au code Node.js de devoir gérer ces suppressions complexes de manière transactionnelle.
+1. **Anti-énumération** : impossible de deviner `api/projects/143` à partir de `142` — l'attaque par énumération est mathématiquement bloquée.
+2. **Systèmes distribués** : le frontend peut générer un UUID valide sans aller-retour serveur.
+3. **Fusions sans conflit** d'ID.
 
-## 5.2 Déclencheurs Automatiques (Triggers Pl/pgSQL)
+Toutes les relations utilisent des `FOREIGN KEY … ON DELETE CASCADE` : la suppression d'un compte Studio efface automatiquement l'ensemble de son contenu, sans logique transactionnelle côté Node.
 
-Afin de séparer la logique de sécurité de la logique métier, plusieurs "Triggers" (déclencheurs) ont été écrits directement dans le langage procédural de PostgreSQL (Pl/pgSQL).
+### 5.2 Déclencheurs PL/pgSQL
 
-**Exemple : Le Trigger de création de Profil**
-Lorsqu'un utilisateur s'inscrit, il est enregistré dans la table sécurisée système `auth.users` de Supabase. L'API applicative n'a pas accès à cette table. Un Trigger a donc été mis en place pour "répliquer" automatiquement ce profil public.
+À l'inscription, l'utilisateur est créé dans la table système `auth.users` (inaccessible à l'API). Un trigger réplique automatiquement un profil métier :
 
 ```sql
--- Fonction Pl/pgSQL exécutée lors de l'inscription
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
@@ -278,327 +273,217 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Affectation du trigger sur l'événement INSERT
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 ```
-Ce mécanisme garantit qu'il y aura *toujours* un profil métier pour chaque utilisateur système, même si le code Node.js plante durant le processus d'inscription.
 
-## 5.3 Dictionnaire de données détaillé
+Ce mécanisme garantit qu'un profil métier existe **toujours**, même si le code Node plante durant l'inscription.
 
-### Table `profiles` — Profils utilisateurs
-| Colonne | Type | Contrainte | Description |
-|---------|------|------------|-------------|
-| id | UUID | PK, FK → auth.users | Identifiant unique (lié à Supabase Auth) |
-| name | TEXT | — | Nom complet de l'utilisateur |
-| organization | TEXT | — | Nom de l'entreprise / studio |
-| role | TEXT | DEFAULT 'client' | Rôle : 'studio' ou 'client' |
-| siret | TEXT | — | Numéro SIRET (obligatoire pour les studios) |
-| created_at | TIMESTAMPTZ | NOT NULL | Date de création du profil |
-
-### Table `clients` — Clients du studio
-| Colonne | Type | Contrainte | Description |
-|---------|------|------------|-------------|
-| id | UUID | PK | Identifiant unique |
-| owner_id | UUID | FK → profiles | Studio propriétaire du client |
-| name | TEXT | NOT NULL | Nom du client |
-| logo_url | TEXT | — | URL du logo |
-| created_at | TIMESTAMPTZ | NOT NULL | Date de création |
-
-### Table `projects` — Projets
-| Colonne | Type | Contrainte | Description |
-|---------|------|------------|-------------|
-| id | UUID | PK | Identifiant unique |
-| owner_id | UUID | FK → profiles | Studio propriétaire |
-| client_id | UUID | FK → clients | Client associé |
-| name | TEXT | NOT NULL | Nom du projet |
-| description | TEXT | — | Description |
-| status | TEXT | DEFAULT 'pending' | Statut : pending, in_progress, completed |
-| date | DATE | — | Date du shooting/projet |
-| share_token | TEXT | UNIQUE | Jeton de partage public |
-| created_at | TIMESTAMPTZ | NOT NULL | Date de création |
-| updated_at | TIMESTAMPTZ | NOT NULL | Dernière modification |
-
-### Table `assets` — Fichiers médias
-| Colonne | Type | Contrainte | Description |
-|---------|------|------------|-------------|
-| id | UUID | PK | Identifiant unique |
-| project_id | UUID | FK → projects | Projet parent |
-| look_id | UUID | FK → looks | Look/série associé |
-| uploaded_by | UUID | FK → profiles | Utilisateur ayant uploadé |
-| name | TEXT | NOT NULL | Nom du fichier |
-| status | TEXT | DEFAULT 'pending' | Statut de validation |
-| url | TEXT | — | URL publique (Supabase Storage) |
-| type | TEXT | — | Type : image, video, raw |
-| file_path | TEXT | — | Chemin dans le bucket Storage |
-| position | INTEGER | NOT NULL | Ordre d'affichage |
-| tags | TEXT[] | — | Tableau de tags |
-| created_at | TIMESTAMPTZ | NOT NULL | Date d'upload |
-
-### Table `team_members` — Gestion de l'équipe
-| Colonne | Type | Contrainte | Description |
-|---------|------|------------|-------------|
-| id | UUID | PK | Identifiant unique |
-| studio_id | UUID | FK → profiles | Studio de rattachement |
-| user_id | UUID | FK → profiles | Utilisateur membre de l'équipe |
-| status | TEXT | DEFAULT 'active' | Statut de l'invitation |
-| created_at | TIMESTAMPTZ | NOT NULL | Date d'ajout |
-
-### Table `conversations` & `messages` — Messagerie interne
-| Colonne | Type | Contrainte | Description |
-|---------|------|------------|-------------|
-| id | UUID | PK | Identifiant unique (conversation ou message) |
-| project_id | UUID | FK → projects | (Conv) Projet lié au fil de discussion |
-| sender_id | UUID | FK → profiles | (Msg) Auteur du message |
-| content | TEXT | — | (Msg) Contenu textuel |
-| file_url | TEXT | — | (Msg) Pièce jointe optionnelle |
-| created_at | TIMESTAMPTZ | NOT NULL | Date de création |
-
-### Table `smart_folders` — Dossiers intelligents
-| Colonne | Type | Contrainte | Description |
-|---------|------|------------|-------------|
-| id | UUID | PK | Identifiant unique |
-| project_id | UUID | FK → projects | Projet parent |
-| parent_id | UUID | FK → smart_folders | Dossier parent (hiérarchie) |
-| name | TEXT | NOT NULL | Nom du dossier |
-| created_at | TIMESTAMPTZ | NOT NULL | Date de création |
-
-### Autres Tables Secondaires
-- `asset_versions` : Historique des versions de fichiers
-- `annotations` : Point & click sur images (inclut réponses et tickets)
-- `looks` : Regroupements / séries par projet
-- `tasks` : Liste de tâches Kanban assignées
-- `notifications` : Système de notifications internes (avec deeplinks)
-- `activities` : Journal d'audit et historique d'actions
-- `mood_boards` : Planches d'inspiration
-- `mood_board_assets` : Médias des planches
-- `time_entries` : Suivi du temps de travail
-- `watermark_settings` : Paramètres de filigrane par studio
-- `audit_logs` : Journal de sécurité
-- `permissions` : RBAC avancé
-- `avatars` : Métadonnées des profils
-- `conversation_participants` : Gestion des lectures de chat
-- `message_reads` : Statuts de lecture individuels
-
-## 5.2 Modèle Conceptuel de Données (MCD)
+### 5.3 Modèle Conceptuel de Données (MCD complet — 23 tables)
 
 ```mermaid
 erDiagram
-    PROFILES ||--o{ CLIENTS : "possède"
-    PROFILES ||--o{ PROJECTS : "crée"
-    PROFILES ||--o{ TASKS : "est assigné"
-    PROFILES ||--o{ NOTIFICATIONS : "reçoit"
-    PROFILES ||--o{ ANNOTATIONS : "rédige"
-    PROFILES ||--o{ ACTIVITIES : "génère"
-    PROFILES ||--o{ ASSETS : "upload"
-    PROFILES ||--o{ ASSET_VERSIONS : "crée"
-    PROFILES ||--o{ TEAM_MEMBERS : "appartient à"
-    PROFILES ||--o{ MESSAGES : "envoie"
-
-    CLIENTS ||--o{ PROJECTS : "est lié à"
-
+    PROFILES ||--o{ CLIENTS : "gère"
+    PROFILES ||--o{ TEAM_MEMBERS : "possède (studio_id)"
+    PROFILES ||--o{ TEAM_MEMBERS : "appartient (user_id)"
+    PROFILES ||--o{ CONVERSATIONS : "crée"
+    PROFILES ||--o{ CONVERSATION_PARTICIPANTS : "participe"
+    CLIENTS  ||--o{ PROJECTS : "possède"
+    CLIENTS  ||--o{ QUOTES : "reçoit"
     PROJECTS ||--o{ LOOKS : "contient"
-    PROJECTS ||--o{ ASSETS : "contient"
-    PROJECTS ||--o{ TASKS : "comprend"
-    PROJECTS ||--o{ ACTIVITIES : "génère"
-    PROJECTS ||--o{ CONVERSATIONS : "possède un fil"
-
-    CONVERSATIONS ||--o{ MESSAGES : "contient"
-
-    LOOKS ||--o{ ASSETS : "regroupe"
-
-    ASSETS ||--o{ ASSET_VERSIONS : "a des versions"
-    ASSETS ||--o{ ANNOTATIONS : "possède"
+    PROJECTS ||--o{ ASSETS : "regroupe"
+    PROJECTS ||--o{ TASKS : "contient"
+    PROJECTS ||--o{ MOOD_BOARDS : "intègre"
+    PROJECTS ||--o{ QUOTES : "génère"
+    PROJECTS ||--o{ TIME_ENTRIES : "enregistre"
+    PROJECTS ||--o{ SMART_FOLDERS : "filtre"
+    PROJECTS ||--o{ PERMISSIONS : "accorde"
+    PROJECTS ||--o{ MESSAGES : "contient"
+    PROJECTS ||--|| WATERMARK_SETTINGS : "définit"
+    PROJECTS ||--o{ ACTIVITIES : "historise"
+    PROJECTS ||--o{ NOTIFICATIONS : "déclenche"
+    PROJECTS ||--o{ MESSAGE_READS : "trace"
+    LOOKS    ||--o{ LOOKS : "parent/enfant"
+    LOOKS    ||--o{ ASSETS : "catégorise"
+    ASSETS   ||--o{ ASSET_VERSIONS : "décline"
+    ASSETS   ||--o{ ANNOTATIONS : "reçoit"
+    ASSETS   ||--o{ MOOD_BOARD_ASSETS : "inclut"
+    ASSET_VERSIONS ||--o{ ANNOTATIONS : "cible"
+    ANNOTATIONS ||--o{ ANNOTATIONS : "répond"
+    TASKS    ||--o{ TIME_ENTRIES : "chronomètre"
+    MOOD_BOARDS ||--o{ MOOD_BOARD_ASSETS : "compose"
+    CONVERSATIONS ||--o{ MESSAGES : "héberge"
+    CONVERSATIONS ||--o{ CONVERSATION_PARTICIPANTS : "rassemble"
+    MESSAGES ||--o{ MESSAGES : "répond"
 
     PROFILES {
         UUID id PK
         TEXT name
-        TEXT organization
         TEXT role
-        TEXT siret
+        TEXT organization
+        JSONB notification_preferences
     }
-
     CLIENTS {
         UUID id PK
         UUID owner_id FK
+        UUID user_id FK
         TEXT name
-        TEXT logo_url
+        TEXT invite_status
     }
-
     PROJECTS {
         UUID id PK
-        UUID owner_id FK
         UUID client_id FK
-        TEXT name
+        UUID owner_id FK
         TEXT status
-        DATE date
+        TEXT share_token
+        BOOLEAN share_enabled
     }
-
     ASSETS {
         UUID id PK
         UUID project_id FK
         UUID look_id FK
-        UUID uploaded_by FK
-        TEXT name
-        TEXT url
-        TEXT file_path
+        TEXT type
+        TEXT status
+        JSONB metadata
+        TEXT[] tags
     }
-
-    ASSET_VERSIONS {
-        UUID id PK
-        UUID asset_id FK
-        INTEGER version_number
-        TEXT url
-    }
-
-    ANNOTATIONS {
-        UUID id PK
-        UUID asset_id FK
-        UUID user_id FK
-        TEXT content
-        FLOAT x_position
-        FLOAT y_position
-    }
-
     LOOKS {
         UUID id PK
         UUID project_id FK
-        TEXT name
+        UUID parent_id FK
         INTEGER position
     }
-
-    TASKS {
+    ANNOTATIONS {
         UUID id PK
-        UUID project_id FK
-        UUID assigned_to FK
-        TEXT title
+        UUID asset_id FK
+        UUID version_id FK
+        FLOAT8 x
+        FLOAT8 y
         TEXT status
-    }
-
-    NOTIFICATIONS {
-        UUID id PK
-        UUID user_id FK
-        TEXT title
-        BOOLEAN read
-    }
-
-    ACTIVITIES {
-        UUID id PK
-        UUID project_id FK
-        UUID user_id FK
-        TEXT action
-        JSONB details
+        UUID parent_id FK
     }
 ```
 
-## 5.3 Sécurité de la base de données (Row Level Security)
+> 🖼️ **[CAPTURE À INSÉRER — Fig. 5.1]** — *Vue « Table Editor » de Supabase montrant la liste des 23 tables (barre latérale) OU le graphe de schéma (Database → Schema Visualizer). Dark Mode, cadrage large.* → `./screens/05-supabase-schema.png`
 
-Toutes les tables ont le RLS (Row Level Security) activé. Cela signifie que même si un utilisateur malveillant obtenait un accès direct à la base de données via le SDK client, il ne pourrait accéder qu'à ses propres données.
+### 5.4 Dictionnaire de données complet (23 tables)
+
+**Cœur métier**
+
+| Table | Colonnes principales |
+|-------|----------------------|
+| **`profiles`** | `id` PK (FK `auth.users`), `name`, `email`, `role` (owner/admin/member/client/viewer), `avatar_url`, `organization`, `notification_preferences` JSONB |
+| **`clients`** | `id` PK, `name`, `owner_id` FK, `user_id` FK (compte lié), `email`, `logo_url`, `invite_status` (pending/active/declined) |
+| **`projects`** | `id` PK, `name`, `client_id` FK, `owner_id` FK, `status` (pending/in_progress/completed/approved/rejected), `date`, `thumbnail_url`, `share_token`, `share_enabled` |
+| **`looks`** | `id` PK, `name`, `project_id` FK, `parent_id` FK (arborescence), `position` |
+| **`assets`** | `id` PK, `name`, `project_id` FK, `look_id` FK, `type`, `url`, `thumbnail_url`, `file_path`, `preview_path`, `file_size`, `mime_type`, `status`, `metadata` JSONB (EXIF), `tags` TEXT[], `position`, `owner_id` FK |
+| **`asset_versions`** | `id` PK, `asset_id` FK, `version_number`, `url`, `thumbnail_url`, `file_path`, `metadata`, `created_by` FK |
+
+**Collaboration & suivi**
+
+| Table | Colonnes principales |
+|-------|----------------------|
+| **`annotations`** | `id` PK, `asset_id` FK, `version_id` FK, `user_id` FK, `content`, `x`/`y` FLOAT8 (%), `timestamp` (vidéo), `status` (open/resolved), `parent_id` FK (thread), `resolved_at`, `resolved_by` FK |
+| **`activities`** | `id` PK, `project_id` FK, `user_id` FK, `type`, `description`, `metadata` JSONB |
+| **`tasks`** | `id` PK, `project_id` FK, `title`, `status` (todo/in_progress/review/done), `priority` (low→urgent), `assigned_to` FK, `due_date` |
+| **`time_entries`** | `id` PK, `project_id` FK, `user_id` FK, `task_id` FK, `duration` (min), `description`, `date` |
+| **`notifications`** | `id` PK, `user_id` FK, `actor_id` FK, `type` (mention/annotation/message/approval), `message`, `project_id` FK, `asset_id` FK, `annotation_id` FK, `read` |
+
+**Organisation & production**
+
+| Table | Colonnes principales |
+|-------|----------------------|
+| **`mood_boards`** | `id` PK, `project_id` FK, `name`, `description`, `owner_id` FK |
+| **`mood_board_assets`** | `mood_board_id` PK/FK, `asset_id` PK/FK, `position` (table de liaison) |
+| **`smart_folders`** | `id` PK, `project_id` FK, `name`, `filters` JSONB, `owner_id` FK |
+| **`quotes`** | `id` PK, `project_id` FK, `client_id` FK, `status` (draft/sent/accepted/rejected/paid), `total_amount` NUMERIC, `items` JSONB, `valid_until` |
+| **`watermark_settings`** | `id` PK, `project_id` FK **UNIQUE**, `text`, `image_url`, `opacity`, `position` |
+| **`permissions`** | `id` PK, `project_id` FK, `user_id` FK, `role` (editor/viewer/approver) |
+
+**Messagerie & équipe**
+
+| Table | Colonnes principales |
+|-------|----------------------|
+| **`conversations`** | `id` PK, `type` (direct/group/project), `title`, `project_id` FK, `created_by` FK |
+| **`conversation_participants`** | `id` PK, `conversation_id` FK, `user_id` FK, `role` (admin/member), `last_read_at`, `joined_at` |
+| **`messages`** | `id` PK, `conversation_id` FK, `project_id` FK, `sender_id` FK, `content`, `attachments` JSONB, `file_url`, `reactions` JSONB, `reply_to_id` FK |
+| **`message_reads`** | `project_id` PK/FK, `user_id` PK/FK, `last_read_at` (accusés de lecture) |
+| **`team_members`** | `id` PK, `studio_id` FK, `user_id` FK, `role` (owner/admin/member), `status` (pending/active) |
+
+**Sécurité**
+
+| Table | Colonnes principales |
+|-------|----------------------|
+| **`audit_logs`** | `id` PK, `action` (REGISTER/LOGIN/FORGOT_PASSWORD…), `resource_type`, `resource_id`, `user_id` FK, `details` JSONB (IP, statut) |
+
+*Toutes les tables portent `created_at` / `updated_at` (TIMESTAMPTZ) et les clés primaires sont en UUID v4.*
+
+### 5.5 Row Level Security (RLS)
+
+Toutes les tables ont le RLS activé : même un accès direct au SDK ne permet de lire que ses propres lignes.
 
 ```sql
--- Chaque utilisateur ne voit que son propre profil
-CREATE POLICY "Users can view own profile."
-  ON public.profiles FOR SELECT
-  USING (auth.uid() = id);
+CREATE POLICY "Clients can view assigned projects"
+ON public.projects FOR SELECT
+USING (
+  auth.uid() = client_id
+  OR auth.uid() IN (
+    SELECT user_id FROM team_members
+    WHERE team_members.studio_id = projects.owner_id
+  )
+);
 ```
 
-De plus, un **Trigger PostgreSQL** crée automatiquement un profil dans la table `profiles` à chaque nouvelle inscription via Supabase Auth, en extrayant le rôle et le SIRET des métadonnées :
+La règle est évaluée par PostgreSQL sur **chaque** requête : impossible d'oublier le filtre de sécurité côté JavaScript.
 
-```sql
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.profiles (id, name, role, siret)
-  VALUES (
-    new.id,
-    new.raw_user_meta_data->>'name',
-    COALESCE(new.raw_user_meta_data->>'role', 'client'),
-    new.raw_user_meta_data->>'siret'
-  );
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-```
+> 🖼️ **[CAPTURE À INSÉRER — Fig. 9.1]** — *Onglet « Authentication → Policies » (ou « Database → Policies ») de Supabase, montrant la liste des politiques RLS actives sur les tables (`projects`, `assets`…). Preuve de la sécurité niveau base.* → `./screens/12-supabase-rls.png`
 
 ---
 
-# 6. Diagrammes UML
+## 6. Diagrammes UML
 
-## 6.1 Diagramme de cas d'utilisation
+### 6.1 Cas d'utilisation
 
 ```mermaid
 graph TB
-    subgraph "Visuals.co"
-        UC1["S'inscrire (Studio/Client)"]
-        UC2["Se connecter"]
-        UC3["Gérer les projets"]
-        UC4["Uploader des assets"]
-        UC5["Annoter une image"]
-        UC6["Gérer les clients"]
-        UC7["Générer une facture PDF"]
-        UC8["Suivre le temps"]
-        UC9["Consulter les projets"]
-        UC10["Télécharger les livrables"]
-        UC11["Envoyer un message"]
-        UC12["Visualiser l'Espace Client"]
-        UC13["Gérer les tâches"]
-        UC14["Consulter les notifications"]
-        UC15["Créer un Moodboard"]
-    end
-
     Studio["👤 Studio"]
     Client["👤 Client"]
     Visiteur["👤 Visiteur"]
 
-    Studio --> UC1
-    Studio --> UC2
-    Studio --> UC3
-    Studio --> UC4
-    Studio --> UC5
-    Studio --> UC6
-    Studio --> UC7
-    Studio --> UC8
-    Studio --> UC13
-    Studio --> UC14
-    Studio --> UC15
+    Studio --> UC1["Gérer projets & clients"]
+    Studio --> UC2["Uploader / annoter assets"]
+    Studio --> UC3["Générer factures & suivi temps"]
+    Studio --> UC4["Gérer tâches (Kanban)"]
+    Client --> UC5["Consulter projets assignés"]
+    Client --> UC6["Télécharger livrables"]
+    Client --> UC7["Annoter / messagerie"]
 
-    Client --> UC1
-    Client --> UC2
-    Client --> UC9
-    Client --> UC10
-    Client --> UC11
-    Client --> UC14
-
-    Visiteur --> UC12
 ```
 
-## 6.2 Diagramme de séquence — Authentification
+### 6.2 Séquence — Authentification
 
 ```mermaid
 sequenceDiagram
     actor U as Utilisateur
-    participant F as Frontend (React)
+    participant F as Frontend
     participant S as Supabase Auth
-    participant A as API (Express)
+    participant A as API Express
     participant DB as PostgreSQL
 
-    U->>F: Remplit le formulaire (email, mdp, rôle, SIRET)
-    F->>S: supabase.auth.signUp({email, password, data: {name, role, siret}})
-    S->>DB: INSERT INTO auth.users
-    DB->>DB: Trigger → INSERT INTO profiles (id, name, role, siret)
-    S-->>F: Session + JWT Token
-    F->>F: Stocke le token, redirige selon le rôle
-    F->>A: GET /api/projects (Authorization: Bearer <JWT>)
-    A->>S: supabase.auth.getUser(token)
-    S-->>A: {user: {id, email, role...}}
-    A->>DB: SELECT * FROM projects WHERE owner_id = user.id
-    DB-->>A: [Liste des projets]
-    A-->>F: JSON Response
-    F->>U: Affiche le Dashboard
+    U->>F: Formulaire (email, mdp, rôle, SIRET)
+    F->>S: signUp({email, password, data})
+    S->>DB: INSERT auth.users → Trigger → INSERT profiles
+    S-->>F: Session + JWT
+    F->>A: GET /api/projects (Bearer JWT)
+    A->>S: getUser(token)
+    S-->>A: {user}
+    A->>DB: SELECT projects (RLS)
+    DB-->>A: Données
+    A-->>F: JSON → Dashboard
 ```
 
-## 6.3 Diagramme de séquence — Upload d'un Asset
+### 6.3 Séquence — Upload d'un asset
 
 ```mermaid
 sequenceDiagram
@@ -609,1203 +494,585 @@ sequenceDiagram
     participant DB as PostgreSQL
 
     U->>F: Glisse-dépose une image
-    F->>F: FormData (file + metadata)
-    F->>A: POST /api/assets/project/:id (multipart/form-data)
-    A->>A: Multer parse le fichier en mémoire (buffer)
-    A->>ST: supabase.storage.from('assets').upload(path, buffer)
-    ST-->>A: Upload OK
-    A->>ST: supabase.storage.from('assets').getPublicUrl(path)
+    F->>A: POST /api/assets/project/:id (multipart)
+    A->>A: Multer (memory) + filtre MIME
+    A->>A: Sharp → WebP (+ watermark optionnel)
+    A->>ST: upload(path, buffer)
     ST-->>A: URL publique
-    A->>DB: INSERT INTO assets (name, url, file_path, project_id...)
-    DB-->>A: Asset créé
+    A->>DB: INSERT assets
     A-->>F: 201 Created {asset}
-    F->>U: Image affichée dans le Dashboard
 ```
 
-## 6.4 Diagramme de classes — Services Frontend
-
-```mermaid
-classDiagram
-    class api {
-        +baseURL: string
-        +interceptors: RequestInterceptor
-        +get(url): Promise
-        +post(url, data): Promise
-        +put(url, data): Promise
-        +delete(url): Promise
-    }
-
-    class projectService {
-        +getProjects(): Promise~Project[]~
-        +getProjectById(id): Promise~Project~
-        +createProject(data): Promise~Project~
-        +updateProject(id, data): Promise~Project~
-        +deleteProject(id): Promise~void~
-        +getDashboardStats(): Promise~Stats~
-    }
-
-    class assetService {
-        +getAssets(projectId): Promise~Asset[]~
-        +getAssetById(id): Promise~Asset~
-        +createAsset(projectId, file, metadata): Promise~Asset~
-        +updateAsset(id, updates): Promise~Asset~
-        +deleteAsset(id): Promise~void~
-        +addAnnotation(id, annotation): Promise~Annotation~
-        +uploadVersion(id, file, comment): Promise~Version~
-    }
-
-    class clientService {
-        +getClients(): Promise~Client[]~
-        +createClient(data): Promise~Client~
-        +updateClient(id, data): Promise~Client~
-        +deleteClient(id): Promise~void~
-    }
-
-    class AuthContext {
-        +user: User
-        +loading: boolean
-        +signUp(data): Promise~void~
-        +signIn(credentials): Promise~Session~
-        +signOut(): Promise~void~
-    }
-
-    projectService --> api : utilise
-    assetService --> api : utilise
-    clientService --> api : utilise
-```
+> 🖼️ **[CAPTURE À INSÉRER — Fig. 6.1]** — *Interface d'annotation : une image ouverte avec une ou plusieurs pastilles numérotées positionnées (x/y) sur le visuel, et le panneau latéral des tickets de retouche (contenu + statut open/resolved).* → `./screens/06-annotation-ticket.png`
 
 ---
 
-# 7. Développement Frontend
+## 7. Développement Frontend & Prototype (C2.2.1)
 
-## 7.1 Architecture des composants et Atomic Design
+### 7.1 Composants — Atomic Design
 
-Le frontend de l'application est développé avec **React 19** et structuré selon une approche s'inspirant de l'**Atomic Design**, organisée autour de **5 domaines fonctionnels isolés** :
+Le front (React 19) suit une approche **Atomic Design** répartie en **6 domaines isolés**, soit **41 composants** + 18 pages.
 
-| Dossier | Nb composants | Rôle et Exemples |
-|---------|---------------|------------------|
-| `components/auth/` | 1 | Logique de protection de route (`ProtectedRoute.jsx`) |
-| `components/common/` | 14 | Atomes et molécules transversaux (`Modal.jsx`, `CommandBar.jsx`, `LuxuryTitle.jsx`, `Sidebar.jsx`, `Loader.jsx`) |
-| `components/landing/` | 8 | Sections de la page marketing publique (`HeroSection.jsx`, `FeaturesGrid.jsx`, `PricingSection.jsx`) |
-| `components/client/` | 3 | Interface immersive orientée client (`ImmersiveGallery.jsx`, `AssetDetailViewer.jsx`) |
-| `components/studio/` | 23 | Interface métier B2B hautement interactive (`ProjectKanban.jsx`, `SmartInvoiceGenerator.jsx`, `TimeTracker.jsx`) |
+| Domaine | Nb | Exemples |
+|---------|----|----------|
+| `auth/` | 1 | `ProtectedRoute` |
+| `common/` | 15 | `Modal`, `CommandBar`, `Sidebar`, `Loader` |
+| `landing/` | 8 | `HeroSection`, `FeaturesGrid`, `Pricing` |
+| `client/` | 1 | Espace client |
 
-**Total : 49 composants React (+16 pages / vues maîtresses).**
+| `studio/` | 13 | `ProjectKanban`, `SmartInvoiceGenerator`, `TimeTracker` |
 
-Cette séparation stricte garantit que les composants de la "Landing Page" ne viennent pas polluer l'espace de nom ni complexifier le "Dashboard Studio".
+Cette séparation évite que les composants marketing ne polluent l'espace de nom du Dashboard.
 
-## 7.2 Gestion d'état (State Management)
+> 🖼️ **[CAPTURE À INSÉRER — Fig. 7.5]** — *SmartInvoice : un devis/facture PDF généré (jsPDF) affiché à l'écran, avec en-tête studio, lignes d'items et total. Illustre la table `quotes` et la génération PDF.* → `./screens/15-smartinvoice-pdf.png`
 
-Plutôt que d'utiliser des librairies externes lourdes (comme Redux ou Zustand), l'état global de l'application est géré nativement par la **Context API** de React, combinée aux Hooks personnalisés. 
+### 7.2 Gestion d'état
 
-L'architecture s'appuie sur deux Providers principaux encapsulant l'application :
+L'état global repose sur la **Context API** native (pas de Redux/Zustand), via deux providers :
 
-1. **`AuthContext`** : Agit comme le gardien de l'application. 
-   - Expose l'objet utilisateur (`user`), l'état de chargement (`loading`), et les méthodes d'authentification (`signIn`, `signOut`).
-   - S'abonne aux événements de session Supabase via `onAuthStateChange`.
+- **`AuthContext`** — gardien de l'application : expose `user`, `loading`, `signIn`, `signOut` ; s'abonne à `onAuthStateChange`.
+- **`DataContext`** — *Single Source of Truth* métier : centralise et met en cache projets, clients, tâches, conversations.
 
-2. **`DataContext`** : Agit comme le cerveau métier (Single Source of Truth) une fois l'utilisateur authentifié.
-   - Centralise les données (projets, clients, tâches, conversations).
-   - Met en cache les requêtes pour éviter des appels API superflus lors du passage d'une page à l'autre.
-   - S'occupe de déclencher les notifications Toast en cas d'erreur de synchronisation.
-
-**Extrait du DataContext :**
 ```jsx
-// client/src/context/DataContext.jsx
-export const DataProvider = ({ children }) => {
-  const [projects, setProjects] = useState([]);
-  const [clients, setClients] = useState([]);
-  const { user } = useAuth(); // Dépendance à l'AuthContext
-
-  useEffect(() => {
-    if (!user) return;
-    
-    // Fetch simultané asynchrone pour optimiser le temps de chargement
-    Promise.all([
-      api.get('/api/projects').then(res => setProjects(res.data)),
-      api.get('/api/clients').then(res => setClients(res.data))
-    ]).catch(err => console.error("Erreur de synchronisation", err));
-  }, [user]);
-
-  return (
-    <DataContext.Provider value={{ projects, clients }}>
-      {children}
-    </DataContext.Provider>
-  );
-};
+useEffect(() => {
+  if (!user) return;
+  Promise.all([
+    api.get('/api/projects').then(r => setProjects(r.data)),
+    api.get('/api/clients').then(r => setClients(r.data)),
+  ]).catch(err => console.error("Erreur de synchronisation", err));
+}, [user]);
 ```
 
-## 7.3 Routage avec React Router v7
+### 7.3 Routage (React Router v7)
 
-Le routage est orchestré par **React Router v7**, utilisant une approche par layouts imbriqués (Nested Routes) pour éviter de re-rendre des éléments communs (comme les sidebars ou les headers).
+Routage par **layouts imbriqués** pour éviter de re-rendre les éléments communs. `ProtectedRoute` éjecte vers `/login` si le JWT est absent ou si le rôle ne correspond pas.
 
-```javascript
-// Architecture des routes principales
-<Routes>
-  {/* Routes Publiques avec Layout Standard */}
-  <Route element={<MainLayout />}>
-    <Route path="/" element={<LandingPage />} />
-    <Route path="/login" element={<SignIn />} />
-  </Route>
-
-  {/* Routes Studio Protégées avec Layout Sidebar */}
-  <Route element={
-    <ProtectedRoute allowedRoles={['studio']}>
-      <StudioLayout />
-    </ProtectedRoute>
-  }>
-    <Route path="/studio" element={<Dashboard />} />
-    <Route path="/studio/projects/:id" element={<ProjectDetail />} />
-    <Route path="/studio/finances" element={<FinancesView />} />
-  </Route>
-
-  {/* Routes Spécifiques */}
-  <Route path="/client/project/:id" element={<ClientLayout />} /> {/* Plein écran immersif */}
-</Routes>
+```jsx
+<Route element={<ProtectedRoute allowedRoles={['studio']}><StudioLayout /></ProtectedRoute>}>
+  <Route path="/studio" element={<Dashboard />} />
+  <Route path="/studio/projects/:id" element={<ProjectDetail />} />
+</Route>
 ```
 
-Le composant `ProtectedRoute` éjecte immédiatement l'utilisateur vers `/login` si le jeton JWT est absent ou si le rôle ne correspond pas.
+### 7.4 Design system
 
-## 7.4 Design System et Expérience Utilisateur (UX)
-
-L'interface a été conçue pour refléter le positionnement "Luxe" et "Premium" de la cible (Studios photo haute couture, vidéastes corporate).
-
-Le système de design est propulsé par **Tailwind CSS v4** avec des variables sur-mesure injectées dans `index.css`.
+Positionnement « premium » propulsé par **Tailwind CSS v4** avec variables sur-mesure et **Dark Mode natif** (fond noir, or signature `#D4AF37`).
 
 ```css
-/* Thème sur-mesure (index.css) */
 @theme {
-  --color-mv-black: #000000;
-  --color-mv-dark: #1A1A1A;     /* Gris très profond, non fatigant pour les yeux */
-  --color-mv-gold: #D4AF37;     /* Or signature pour les call-to-action */
-  --color-mv-white: #F5F5F5;    /* Blanc cassé pour réduire l'éblouissement */
-  
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-serif: "Playfair Display", serif; /* Utilisé pour les titres majeurs */
+  --color-mv-black: #0A0A0A;
+  --color-mv-gold:  #D4AF37;   /* CTA signature */
+  --color-mv-white: #F5F5F5;   /* blanc cassé, anti-éblouissement */
+  --font-serif: "Playfair Display", serif;
 }
 ```
 
-**Ergonomie et "Respiration" (Oxygenation) :**
-Suite aux itérations UX, les modales de création (ex: Ajouter un projet) ont été redimensionnées (`max-w-2xl`) et les marges internes (paddings) augmentées pour réduire la charge cognitive (Cognitive Load).
+> 🖼️ **[CAPTURE À INSÉRER — Fig. 7.1]** — *Landing page (`/`) : section héro avec le titre en Playfair Display, l'or signature et le Dark Mode. Montre le positionnement « premium ».* → `./screens/07-landing-hero.png`
+>
+> 🖼️ **[CAPTURE À INSÉRER — Fig. 7.2]** — *Command Bar ouverte (raccourci `Ctrl+K`) par-dessus le Dashboard, listant les actions rapides / la recherche.* → `./screens/08-command-bar.png`
 
-## 7.5 Moteur d'Animations (Framer Motion & GSAP)
+### 7.5 Prototype et ergonomie (C2.2.1)
 
-Les animations ne sont pas des gadgets, elles servent de "feedback" à l'utilisateur, confirmant que son action a bien été prise en compte.
+La conception a fait l'objet d'une phase de prototypage (wireframes + maquettes haute fidélité) ciblant deux ergonomies distinctes :
 
-- **Framer Motion** est utilisé pour les micro-interactions du Dashboard. L'utilisation de l'attribut `layoutId` permet de réaliser des animations de transition fluides (Shared Axis Transitions) lorsqu'un élément change de position dans le DOM. L'apparition des modales utilise un effet de "Ressort" (`type: "spring"`).
-- **GSAP (GreenSock)** intervient exclusivement sur la Landing Page pour des animations au scroll (ScrollTrigger) lourdes en calcul, comme le parallaxe des sections, inaccessibles via de simples transitions CSS.
+- **Studio (B2B) — Desktop-First** : les studios travaillent sur grands moniteurs calibrés. L'interface offre une densité d'information élevée, une `Sidebar` fixe et des menus contextuels denses pour maximiser la productivité.
+- **Client final — Mobile-First** : le client valide souvent en déplacement. Navigation tactile (swipe via Framer Motion), cibles tactiles respectant la règle des **44 × 44 px** (directives Apple/Google).
 
-## 7.4 Présentation du Prototype et Choix Ergonomiques (Compétence C2.2.1)
+**Choix ergonomiques liés à la sécurité et au confort** : Dark Mode exclusif (fait ressortir les couleurs réelles des photos, réduit la fatigue visuelle) ; modales de création « oxygénées » (plein écran + `backdrop-blur`) pour concentrer l'attention sur une tâche unique et réduire la charge cognitive.
 
-Afin de répondre aux exigences de la compétence C2.2.1, la conception de l'application a fait l'objet d'une phase de prototypage (Wireframes & Maquettes Haute Fidélité) ciblant spécifiquement l'ergonomie Web et Mobile.
+> 🖼️ **[CAPTURE À INSÉRER — Fig. 7.3]** — *Prototype Studio Desktop-First : formulaire d'inscription/connexion (`/signup`) montrant le champ SIRET et la sélection du rôle Studio/Client. Illustre C2.2.1 (ergonomie + sécurité).* → `./screens/09-signup-desktop.png`
+>
+> 🖼️ **[CAPTURE À INSÉRER — Fig. 7.4]** — *Prototype Client Mobile-First : même parcours capturé en viewport mobile (375 px) — vue projet ou validation d'un visuel au doigt. Illustre l'ergonomie tactile (touch targets 44 px).* → `./screens/10-client-mobile.png`
 
-### Conception et Cibles (Desktop & Mobile)
-- **Cible Studio (B2B)** : L'interface d'administration (Dashboard, Kanban, Upload massif) a été conçue en **Desktop-First**. Les studios photo travaillent sur de grands moniteurs (Mac Studio, écrans calibrés). L'interface offre donc une densité d'information élevée, des barres latérales fixes (`Sidebar`) et des menus contextuels denses pour maximiser la productivité.
-- **Cible Client final (B2C/B2B)** : L'interface "Client" a été pensée en **Mobile-First**. Le client final (ex: un influenceur ou un directeur artistique) valide souvent ses photos en déplacement depuis son smartphone. La navigation a donc été optimisée pour le tactile (Swipe gestures via `framer-motion`), et les cibles tactiles ("Touch Targets") respectent la règle d'or de 44x44 pixels imposée par les directives d'accessibilité mobile d'Apple et Google.
-
-### Charte Graphique et UI (Dark Mode)
-- Le choix s'est porté sur un **Dark Mode natif et exclusif** (Noir `#0A0A0A` et Or `#D4AF37`). Ce choix ergonomique permet de faire ressortir les couleurs réelles des photographies hébergées sans éblouir l'utilisateur (fatigue visuelle réduite, exigence forte dans le milieu de la photographie).
-- Les modales de création (Projet, Entreprise) ont été "oxygénées" : elles occupent l'écran entier avec un effet de flou arrière (Glassmorphism `backdrop-blur-md`) pour concentrer l'attention de l'utilisateur sur une seule tâche à la fois, réduisant la charge cognitive.
-
-*(Des captures d'écrans du prototype final ou des maquettes Figma sont à joindre en Annexe D lors de la présentation orale).*
+> *Les maquettes Figma haute fidélité sont jointes en Annexe D pour la présentation orale.*
 
 ---
 
-# 8. Développement Backend
+## 8. Développement Backend (C2.2.3)
 
-## 8.1 Architecture de l'API et Modèle MVC
+### 8.1 Architecture MVC
 
-L'API REST a été structurée de manière stricte autour d'un pattern **MVC (Model-View-Controller)** adapté au monde des API (sans vues HTML, remplacées par des réponses JSON). Ce découpage granulaire garantit que chaque fichier a une responsabilité unique (Single Responsibility Principle).
+L'API REST suit un pattern **MVC** adapté aux API (réponses JSON au lieu de vues HTML) :
 
-- **Fichier d'entrée (`server.js` / `app.js`)** : Déclare l'instance Express, applique les middlewares globaux (CORS, Helmet, Rate Limit) et monte les routeurs.
-- **Routes (`/routes/*.js`)** : Agissent comme des "aiguilleurs". Elles reçoivent la requête HTTP, appliquent les middlewares spécifiques (comme `requireAuth` ou `requireRole('studio')`), puis redirigent vers le bon contrôleur.
-- **Contrôleurs (`/controllers/*.js`)** : Contiennent l'intelligence métier. Ils extraient les paramètres, interrogent la base de données (Supabase SDK), appliquent la logique, puis renvoient une réponse HTTP standardisée.
+- **`app.js`** — instance Express, middlewares globaux, montage des routeurs.
+- **Routes** — aiguillage + middlewares spécifiques (`requireAuth`, `requireRole`).
+- **Controllers** — logique métier, accès BDD (SDK Supabase), réponse HTTP standardisée.
 
-### Exemple de structure MVC : Le système de projets
-
-**1. La Route (`server/routes/projectRoutes.js`) :**
 ```javascript
-import express from 'express';
-import { getProjects, createProject, getProjectById } from '../controllers/projectController.js';
-import { requireAuth } from '../middlewares/authMiddleware.js';
-import { requireRole } from '../middlewares/roleMiddleware.js';
-
-const router = express.Router();
-
-// Toutes les routes nécessitent un token JWT valide
+// routes/projectRoutes.js
 router.use(requireAuth);
-
 router.get('/', getProjects);
-router.post('/', requireRole('studio'), createProject); // Seul un studio peut créer un projet
+router.post('/', requireRole('studio'), createProject);
 router.get('/:id', getProjectById);
-
-export default router;
 ```
 
-**2. Le Contrôleur (`server/controllers/projectController.js`) :**
 ```javascript
-import { supabase } from '../config/supabase.js';
-
+// controllers/projectController.js
 export const createProject = async (req, res) => {
   try {
     const { name, client_id, description, date } = req.body;
-    const owner_id = req.user.id; // Injecté par le requireAuth
+    const owner_id = req.user.id;                 // injecté par requireAuth
+    if (!name) return res.status(400).json({ error: 'Le nom est obligatoire.' });
 
-    // Validation métier basique
-    if (!name) {
-      return res.status(400).json({ error: 'Le nom du projet est obligatoire.' });
-    }
-
-    // Insertion sécurisée via SDK (protégé par RLS en base)
     const { data: project, error } = await supabase
       .from('projects')
       .insert([{ owner_id, client_id, name, description, date }])
-      .select()
-      .single();
-
+      .select().single();
     if (error) throw error;
 
     res.status(201).json(project);
-  } catch (error) {
-    console.error('Erreur createProject:', error);
+  } catch (err) {
+    console.error('createProject:', err);
     res.status(500).json({ error: 'Erreur interne du serveur' });
   }
 };
 ```
 
-## 8.2 Liste exhaustive des Endpoints API
+### 8.2 Endpoints API
 
-L'API de Visuals.co expose près d'une soixantaine de points d'entrée (endpoints) permettant au frontend de réaliser l'intégralité des opérations CRUD (Create, Read, Update, Delete) nécessaires.
+L'API expose **~97 endpoints** répartis sur **20 fichiers de routes** couvrant l'intégralité des opérations CRUD.
 
-| Méthode | Endpoint | Description et Rôle Requis |
-|---------|----------|---------------------------|
-| GET | `/api/projects` | Lister les projets (Studio/Client) |
-| GET | `/api/projects/:id` | Détail d'un projet (Studio/Client) |
-| POST | `/api/projects` | Créer un projet (**Studio**) |
-| PUT | `/api/projects/:id` | Modifier un projet (**Studio**) |
-| DELETE | `/api/projects/:id` | Supprimer un projet (**Studio**) |
-| GET | `/api/projects/dashboard/stats` | KPIs aggrégés pour le dashboard (**Studio**) |
-| GET | `/api/clients` | Lister les clients associés au studio (**Studio**) |
-| POST | `/api/clients` | Créer un nouveau client (**Studio**) |
-| GET | `/api/assets/project/:projectId` | Lister tous les assets d'un projet |
-| POST | `/api/assets/project/:projectId` | Upload (multipart) d'un nouvel asset |
-| DELETE | `/api/assets/:id` | Suppression définitive (Asset + Supabase Storage) |
-| POST | `/api/assets/:id/annotations` | Ajouter un ticket d'annotation (x,y) |
-| POST | `/api/assets/:id/versions` | Upload d'une nouvelle version (versioning) |
-| GET/POST | `/api/tasks` | CRUD tâches Kanban associées aux projets |
-| GET/POST | `/api/notifications` | Centre de notifications en temps réel |
-| GET/POST | `/api/mood-boards` | Création de planches d'inspiration |
-| GET/POST | `/api/time-entries` | Suivi du temps de travail par projet |
-| GET/POST | `/api/smart-folders` | Hiérarchisation virtuelle des dossiers |
-| GET/POST | `/api/teams` | Invitations et gestion des membres du studio |
-| GET/POST | `/api/conversations` | Création de fils de discussion liés aux projets |
-| POST | `/api/messages` | Envoi d'un message dans une conversation |
-| GET/PUT | `/api/profile` | Lecture/Mise à jour du profil utilisateur connecté |
-| GET | `/health` | Health check pour le monitoring AWS/Google Cloud |
-| GET | `/api-docs` | Interface interactive Swagger UI |
+| Méthode | Endpoint | Rôle requis |
+|---------|----------|-------------|
+| GET/POST/PUT/DELETE | `/api/projects` | Studio (écriture), Studio+Client (lecture) |
+| GET | `/api/projects/dashboard/stats` | Studio |
+| GET/POST | `/api/clients` | Studio |
+| GET/POST/DELETE | `/api/assets/project/:projectId` | Studio (upload) |
+| POST | `/api/assets/:id/annotations` · `/versions` | Studio + Client |
+| GET/POST | `/api/tasks`, `/notifications`, `/mood-boards`, `/time-entries`, `/smart-folders`, `/teams`, `/conversations`, `/messages` | selon rôle |
+| GET/PUT | `/api/profile` | Utilisateur connecté |
+| GET | `/health` · `/api-docs` | Public (monitoring + Swagger) |
 
-**Total : 19 controllers, 19 fichiers de routes, ~60 endpoints.**
+> 🖼️ **[CAPTURE À INSÉRER — Fig. 8.1]** — *Interface Swagger UI (`localhost:5001/api-docs`) : liste des endpoints regroupés par tag, avec une route dépliée montrant le schéma de requête/réponse. Preuve de la documentation OpenAPI 3.0.* → `./screens/11-swagger-ui.png`
 
-## 8.3 Le Pipeline de Middlewares Express
+### 8.3 Pipeline de middlewares
 
-L'ordre de déclaration des middlewares dans Express est primordial, car ils s'exécutent séquentiellement (Chain of Responsibility). Voici la configuration exacte du fichier d'entrée de l'API.
+L'ordre de déclaration est primordial (Chain of Responsibility) :
 
 ```javascript
-// 1. Logs HTTP : indispensable pour le monitoring en production
-app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-
-// 2. Sécurité des Headers : masque "X-Powered-By", configure le CSP, empêche le MIME-sniffing
-app.use(helmet());
-
-// 3. CORS : Seul le frontend hébergé sur le domaine autorisé peut interroger l'API
-app.use(cors({
-  origin: process.env.CLIENT_URL,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  credentials: true
-}));
-
-// 4. Rate Limiting : Protection contre les attaques par force brute ou le scraping intensif
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // Fenêtre de 15 minutes
-  max: 1000, // Limite absolue par IP
-  message: { error: 'Trop de requêtes, veuillez réessayer plus tard.' }
-});
-app.use('/api/', apiLimiter);
-
-// 5. Parsing : Extrait le JSON du corps des requêtes POST/PUT
-app.use(express.json({ limit: '5mb' }));
-
-// 6. Montage des routeurs (après toutes les sécurités)
-app.use('/api/projects', projectRoutes);
-// ...
+app.use(morgan(prod ? 'combined' : 'dev'));      // 1. Logs HTTP
+app.use(helmet());                               // 2. Headers de sécurité
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));  // 3. CORS
+app.use('/api/', apiLimiter);                    // 4. Rate limiting (500/15min)
+app.use(express.json({ limit: '5mb' }));         // 5. Parsing JSON
+app.use('/api/projects', projectRoutes);         // 6. Routeurs
 ```
 
-## 8.4 Moteur de traitement de fichiers (Upload & Media Pipeline)
+Trois middlewares propriétaires : `requireAuth` (validation JWT), `requireRole` (RBAC), `blockClients` (verrou de routes réservées au Studio).
 
-La plateforme Visuals.co manipulante de très lourds fichiers (photos RAW, exports 4K), une attention particulière a été apportée au pipeline d'upload.
+### 8.4 Pipeline de traitement des fichiers
 
-1. **Multer (MemoryStorage)** : Les requêtes `multipart/form-data` provenant du frontend sont interceptées par le middleware Multer. Le fichier n'est pas écrit sur le disque du serveur (pour éviter de saturer l'espace de Google Cloud Run), mais conservé en RAM (`memoryStorage`). Un filtre rejette immédiatement tout fichier non-média (ex: `.exe`).
-2. **Sharp (C++ Image Processing)** : Avant de transférer l'image, le buffer mémoire est intercepté par la librairie Sharp. 
-   - Elle génère une version optimisée WebP pour l'affichage web.
-   - Elle peut appliquer un **tatouage numérique (Watermark)** transparent (via une image SVG composite) si le Studio l'exige.
-3. **Supabase Storage** : Le buffer final est poussé dans un bucket S3 compatible. Le chemin généré est déterministe pour éviter les collisions : `userId/projectId/timestamp_filename.ext`.
-4. **Base de données** : Si l'upload Cloud réussit, une entrée est créée dans la table `assets` contenant l'URL publique générée.
+La plateforme manipule de lourds fichiers (RAW, exports 4K) :
+
+1. **Multer (memoryStorage)** — le fichier reste en RAM (jamais sur disque). Un filtre rejette tout non-média (`.exe`).
+2. **Sharp (C++)** — génère une version **WebP** optimisée, applique un **watermark** SVG optionnel.
+3. **Supabase Storage** — buffer poussé vers un bucket S3, chemin déterministe `userId/projectId/timestamp_filename.ext`.
+4. **BDD** — insertion dans `assets` avec l'URL publique.
 
 ---
 
-# 9. Authentification et Sécurité Applicative
+## 9. Sécurité applicative
 
-La sécurité est le pilier central d'une application SaaS B2B manipulant des données confidentielles avant leur publication officielle (embargo). L'approche adoptée est celle de la **Défense en profondeur** (Defense in Depth).
+Approche **Défense en profondeur** (Defense in Depth), essentielle pour une application manipulant des données sous embargo.
 
-## 9.1 Flux d'authentification et Architecture Sécurisée
+### 9.1 Authentification Zero Trust
 
-L'authentification ne repose pas aveuglément sur le frontend. L'application met en place un modèle de **sécurité Zero Trust** où le backend Node.js intercepte et valide toute tentative de création de compte (`/api/auth/register`) avant de communiquer avec Supabase Auth.
+Le backend intercepte et valide toute inscription **avant** de communiquer avec Supabase Auth.
 
-- **Sécurité du Mot de Passe (Backend)** : Le contrôleur `authController.js` impose une politique stricte (Regex) exigeant au minimum 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre et 1 caractère spécial. Toute tentative de mot de passe faible (ex: `12345678`) est rejetée en amont avec un code HTTP 400.
-- **Démonstration de Requêtes Paramétrées** : Pour se prémunir contre les injections SQL (A03 de l'OWASP), le backend intègre le driver natif `pg`. Lors de l'inscription, une requête d'audit est insérée via une requête strictement paramétrée (`INSERT INTO audit_logs VALUES ($1, $2, $3)`). Le moteur PostgreSQL garantit ainsi que les inputs utilisateurs (comme l'adresse IP ou l'email) sont traités comme des chaînes de caractères brutes, et jamais évalués comme du code SQL malveillant.
-- **Limitation de Débit (Rate Limiting)** : Les routes d'authentification (`/login` et `/register`) sont protégées par un `authLimiter` (5 requêtes par adresse IP toutes les 15 minutes) pour contrer drastiquement les attaques par force brute ou l'énumération de comptes.
+- **Politique de mot de passe (Regex)** : ≥ 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre, 1 spécial. Rejet en HTTP 400.
+- **Requêtes paramétrées** : le driver `pg` insère les logs d'audit via `INSERT INTO audit_logs VALUES ($1,$2,$3)` — les entrées utilisateur ne sont jamais évaluées comme du SQL (protection injection).
+- **Rate limiting renforcé** : `authLimiter` = 5 requêtes / IP / 15 min sur `/login` et `/register` (anti-brute-force).
 
-### Structure du JWT Visuals.co
-Un JWT est composé de trois parties encodées en Base64 (`Header.Payload.Signature`). Si nous décodons le payload de l'un de nos utilisateurs, voici ce qu'il contient :
-```json
-{
-  "aud": "authenticated",
-  "exp": 1690000000,
-  "sub": "uuid-de-l-utilisateur",
-  "email": "contact@studio.com",
-  "app_metadata": {
-    "provider": "email"
-  },
-  "user_metadata": {
-    "name": "Studio Photo 75",
-    "role": "studio",
-    "siret": "12345678900012"
-  }
-}
-```
-L'API Express décode ce token cryptographiquement avec la clé secrète de Supabase. Si le token a été altéré, la signature est invalide et la requête est rejetée (`401 Unauthorized`).
+Le JWT (Header.Payload.Signature, Base64) est décodé cryptographiquement avec la clé secrète Supabase ; toute altération invalide la signature → `401 Unauthorized`.
 
-## 9.2 Contrôle d'accès basé sur les rôles (RBAC)
-
-Le contrôle d'accès dans le code Express s'effectue via un middleware propriétaire `requireRole`.
-Deux rôles stricts cohabitent :
-- **Studio** : Pleins droits sur les ressources créées.
-- **Client** : Droits de lecture seule sur les assets validés, droits d'écriture sur les tickets d'annotation et messages.
+### 9.2 Contrôle d'accès par rôles (RBAC)
 
 ```javascript
-// Middleware : server/middlewares/roleMiddleware.js
-export const requireRole = (allowedRoles) => {
-  return (req, res, next) => {
-    // req.user a été peuplé au préalable par le requireAuth
-    const userRole = req.user?.user_metadata?.role || 'client';
-    
-    if (!allowedRoles.includes(userRole)) {
-      return res.status(403).json({ 
-        error: 'Accès interdit', 
-        details: `Rôle requis: ${allowedRoles.join(' ou ')}` 
-      });
-    }
-    
-    next();
-  };
+export const requireRole = (allowedRoles) => (req, res, next) => {
+  const userRole = req.user?.user_metadata?.role || 'client';
+  if (!allowedRoles.includes(userRole)) {
+    return res.status(403).json({ error: 'Accès interdit' });
+  }
+  next();
 };
 ```
 
-## 9.3 Sécurisation de la base de données : Row Level Security (RLS)
+- **Studio** — pleins droits sur ses ressources.
+- **Client** — lecture des assets validés, écriture sur annotations et messages.
 
-Même si un pirate compromettait l'API Node.js et accédait au SDK Supabase avec un JWT valide, le moteur PostgreSQL lui-même bloquerait toute lecture illégitime grâce au **Row Level Security (RLS)**.
+### 9.3 Row Level Security
 
-Chaque table possède des *Policies* SQL. Par exemple, voici la règle qui garantit qu'un client ne peut voir QUE les projets qui lui sont explicitement assignés :
+Dernier rempart : même une API compromise ne contourne pas le RLS PostgreSQL (cf. §5.5). Le filtre `auth.uid()` est appliqué au niveau moteur, indépendamment du code applicatif.
 
-```sql
--- RLS Policy sur la table "projects" pour les clients
-CREATE POLICY "Clients can view assigned projects"
-ON public.projects
-FOR SELECT
-USING (
-  auth.uid() = client_id 
-  OR 
-  auth.uid() IN (
-    -- Permet aussi l'accès si le client fait partie d'une équipe invitée
-    SELECT user_id FROM team_members WHERE team_members.studio_id = projects.owner_id
-  )
-);
-```
-Cette règle est évaluée de manière invisible par PostgreSQL sur *chaque* requête `SELECT * FROM projects`. Il est donc impossible d'oublier d'appliquer le filtre de sécurité dans le code JavaScript, puisque c'est la base de données qui s'en charge.
+### 9.4 Conformité OWASP Top 10 (2021)
 
-## 9.4 Cartographie et Prévention des Vulnérabilités (Conformité OWASP Top 10)
-
-Pour garantir la sécurité des données (qui est une **compétence éliminatoire** du jury), l'architecture de Visuals.co a été systématiquement éprouvée contre les menaces du référentiel **OWASP Top 10 (2021)**.
-
-1. **A01:2021-Broken Access Control (Défaillance du contrôle d'accès)**
-   - *Risque* : Un client accède aux projets d'un autre client en modifiant l'URL.
-   - *Solution* : Implémentation stricte du **Row Level Security (RLS)** directement dans la base de données PostgreSQL. L'accès aux tables est conditionné par l'UUID du token JWT en cours d'utilisation (`auth.uid()`). Même une faille dans le code Node.js ne permettrait pas de contourner cette règle de bas niveau.
-2. **A02:2021-Cryptographic Failures (Défaillances cryptographiques)**
-   - *Risque* : Interception des mots de passe ou des données réseau en clair.
-   - *Solution* : Certificat SSL/TLS 1.3 imposé (HTTPS). Les mots de passe ne sont **jamais** stockés en base ; Supabase utilise l'algorithme de hachage robuste **bcrypt** (avec salt) pour sécuriser l'authentification.
-3. **A03:2021-Injection (Injections SQL/NoSQL)**
-   - *Risque* : Injection de commandes SQL via un champ de formulaire.
-   - *Solution* : Utilisation exclusive du SDK Supabase qui s'appuie sur PostgREST. Ce dernier transforme automatiquement toutes les requêtes HTTP en requêtes préparées (Prepared Statements) paramétrées. Aucune concaténation de chaînes SQL n'est effectuée côté backend.
-4. **A04:2021-Insecure Design (Conception non sécurisée)**
-   - *Risque* : Absence de limite sur les tentatives de mot de passe.
-   - *Solution* : Stratégie de conception "Secure by Default". Le middleware `express-rate-limit` bloque automatiquement l'IP après un nombre défini de requêtes abusives, rendant le bruteforce impraticable.
-5. **A05:2021-Security Misconfiguration (Mauvaise configuration de sécurité)**
-   - *Risque* : Exposition des messages d'erreurs (stack traces) en production ou headers par défaut bavards.
-   - *Solution* : Le middleware **Helmet** supprime automatiquement l'en-tête `X-Powered-By: Express` et met en place des politiques HSTS strictes. Les erreurs Express retournées en production (quand `NODE_ENV=production`) ne contiennent jamais de stack trace.
-6. **A06:2021-Vulnerable and Outdated Components (Composants vulnérables)**
-   - *Risque* : Exploitation d'une faille dans une dépendance NPM (`npm install`).
-   - *Solution* : L'outil `npm audit` est intégré dans les pre-commit hooks. De plus, GitHub Dependabot scanne quotidiennement le dépôt pour ouvrir automatiquement des PR de mise à jour de sécurité.
-7. **A07:2021-Identification and Authentication Failures (Défaillances d'identification)**
-   - *Risque* : Usurpation d'identité par vol de cookie de session.
-   - *Solution* : Utilisation de **JWT (JSON Web Tokens)** sans état (stateless) avec une durée de vie très courte, complétée par un système de Refresh Tokens tournants.
-8. **A08:2021-Software and Data Integrity Failures (Défaillances d'intégrité)**
-   - *Risque* : Upload d'un fichier exécutable malveillant via le formulaire d'image.
-   - *Solution* : Le middleware **Multer** vérifie non seulement l'extension du fichier, mais le moteur C++ **Sharp** décode le buffer mémoire de l'image. Si le fichier n'est pas structurellement une vraie image, l'upload est rejeté avant même de toucher le disque.
-9. **A09:2021-Security Logging and Monitoring Failures (Carence de journalisation)**
-   - *Risque* : Incapacité à tracer l'origine d'une action destructive (ex: qui a effacé un projet).
-   - *Solution* : Mise en place de la table d'Audit (`audit_logs`) et de la table `activities` qui stockent irrévocablement chaque modification importante avec l'ID de l'utilisateur, l'horodatage et la cible.
-10. **A10:2021-Server-Side Request Forgery (SSRF)**
-    - *Risque* : Le serveur est manipulé pour faire une requête HTTP vers un service interne protégé.
-    - *Solution* : L'architecture REST de Visuals.co n'accepte aucune URL externe provenant du client pour exécuter des requêtes réseau (fetch distant depuis l'API express bloqué par design).
+| Risque | Mesure mise en œuvre |
+|--------|----------------------|
+| **A01** Broken Access Control | RLS PostgreSQL conditionné à `auth.uid()` |
+| **A02** Cryptographic Failures | TLS 1.3 imposé ; mots de passe hachés bcrypt (salt) par Supabase |
+| **A03** Injection | SDK Supabase / PostgREST → requêtes préparées, aucune concaténation SQL |
+| **A04** Insecure Design | Secure by Default ; `express-rate-limit` |
+| **A05** Security Misconfiguration | Helmet (masque `X-Powered-By`, HSTS) ; pas de stack trace en prod |
+| **A06** Vulnerable Components | `npm audit` en pre-commit ; Dependabot quotidien |
+| **A07** Auth Failures | JWT stateless courte durée + refresh tokens tournants |
+| **A08** Data Integrity Failures | Multer (MIME) + décodage Sharp : rejet des faux fichiers image |
+| **A09** Logging Failures | Tables `audit_logs` et `activities` (traçabilité horodatée) |
+| **A10** SSRF | Aucune URL externe cliente exécutée côté serveur (bloqué par design) |
 
 ---
 
-# 10. Gestion des Fichiers (Storage)
+## 10. Critères de qualité et de performance
 
-## 10.1 Architecture du stockage
+### 10.1 Critères de qualité (code & processus)
 
-Les fichiers sont hébergés sur **Supabase Storage**, un service S3-compatible intégré à Supabase.
+| Critère | Cible | Outil / mécanisme |
+|---------|-------|-------------------|
+| Style de code homogène | 0 erreur lint | ESLint + Prettier (bloquant en pre-commit via Husky) |
+| Couverture de tests | ≥ 80 % sur les modules critiques | Vitest `--coverage` |
+| Non-régression | 100 % des tests verts avant merge | GitHub Actions (bloque la PR sinon) |
+| Sécurité des dépendances | 0 vulnérabilité haute | `npm audit` + Dependabot |
+| Traçabilité | Convention Conventional Commits | `feat:`, `fix:`, `refactor:` |
+| Documentation API | 100 % des routes documentées | Swagger/OpenAPI 3.0 |
 
-| Bucket | Accès | Contenu |
-|--------|-------|---------|
-| `assets` | Public | Photos, vidéos, fichiers RAW des projets |
-| `avatars` | Public | Photos de profil des utilisateurs |
-| `thumbnails` | Public | Miniatures générées |
+### 10.2 Critères de performance
 
-## 10.2 Processus d'upload
-
-1. L'utilisateur glisse-dépose un fichier dans le composant `ImageUploader`
-2. Le fichier est envoyé en `multipart/form-data` à l'API Express
-3. **Multer** parse le fichier et le stocke en mémoire (buffer)
-4. Le controller `createAsset` upload le buffer vers Supabase Storage
-5. Le chemin du fichier suit la convention : `{userId}/{projectId}/{timestamp}.{ext}`
-6. Une URL publique est générée et stockée dans la table `assets`
-
-## 10.3 Sécurité des fichiers
-
-- Les fichiers sont organisés par `userId/projectId/` pour éviter les collisions
-- La suppression d'un asset supprime aussi le fichier physique du bucket
-- Le bucket `assets` est public (lecture) mais l'upload nécessite une authentification via l'API
+| Critère | Cible | Moyen technique |
+|---------|-------|-----------------|
+| Démarrage front (dev, à froid) | < 500 ms | Vite / ESBuild |
+| Chargement initial (prod) | < 1 s | CDN Vercel + code-splitting |
+| Poids des images livrées | −30 % vs JPEG | Conversion WebP à la volée (Sharp) |
+| Chargement des galeries | Sans « jank » | Lazy loading (`loading="lazy"` + IntersectionObserver) |
+| Latence API (lecture) | Faible et constante | Requêtes ciblées + cache DataContext |
+| Disponibilité | 99,9 % | Auto-scaling AWS + Load Balancing |
+| Abus / scraping | Bloqué | Rate limiting (500 req/15 min ; 5 req/15 min sur l'auth) |
 
 ---
 
-# 11. Tests et Qualité
+## 11. Stratégie de tests (C2.2.2)
 
-## 11.1 Stratégie de test globale et TDD
-
-La qualité logicielle est au cœur du développement de Visuals.co. La stratégie de test suit strictement la **pyramide des tests** théorisée par Mike Cohn. L'objectif est d'avoir une base large de tests unitaires très rapides, une couche intermédiaire de tests d'intégration, et un nombre restreint mais critique de tests end-to-end (E2E).
+### 11.1 Pyramide des tests
 
 ```
-        ╱ E2E (Playwright) ╲         → Couvre les parcours critiques (ex: Login + Upload)
+        ╱  E2E (Playwright)  ╲        → parcours critiques (login + upload)
        ╱───────────────────────╲
-      ╱  Intégration (Supertest)  ╲   → Teste l'API Express, la base de données et les règles RLS
+      ╱ Intégration (Supertest)  ╲    → API Express, RLS, middlewares
      ╱─────────────────────────────╲
-    ╱   Unitaires (Vitest + RTL)    ╲ → Valide le comportement isolé des composants React et de la logique métier
+    ╱  Unitaires (Vitest + RTL)     ╲ → composants React, logique métier
    ╱─────────────────────────────────╲
 ```
 
-Le projet adopte une approche inspirée du **TDD (Test-Driven Development)** pour les composants critiques, garantissant que le code produit répond aux exigences métiers avant même l'implémentation complète.
+Approche **TDD** sur les composants critiques ; harnais exécuté systématiquement par la CI. **Couverture ≥ 80 %** sur `AssetController`, `ProjectController` et les modales React.
 
-## 11.2 Tests unitaires et composants Frontend
+> 🖼️ **[CAPTURE À INSÉRER — Fig. 11.1]** — *Rapport de couverture de tests : sortie de `npm run test:coverage` (tableau Statements/Branches/Functions/Lines dans le terminal) OU le rapport HTML `coverage/index.html`. Preuve du seuil de 80 %.* → `./screens/13-coverage.png`
 
-**Outil :** Vitest + React Testing Library (RTL)  
-**Philosophie :** "Testez votre application comme vos utilisateurs l'utilisent". Nous ne testons pas les détails d'implémentation (comme le nom d'une variable d'état), mais le comportement visible (comme la présence d'un message d'erreur après un clic).
+### 11.2 Tests unitaires (Frontend)
 
-### Configuration de l'environnement de test
-L'environnement de test utilise `jsdom` pour simuler un navigateur complet dans Node.js. Un fichier `setupTests.js` est chargé avant chaque suite pour étendre les assertions de Vitest avec `@testing-library/jest-dom` (ex: `toBeInTheDocument()`).
-
-### Exemple de Test : `ConfirmDialog`
-
-Ce test vérifie l'interaction utilisateur complète : ouverture de modale, vérification de l'accessibilité (role="dialog") et simulation du clic.
+**Vitest + React Testing Library** — philosophie « testez l'application comme l'utilisateur l'utilise » : on teste le comportement visible, pas les détails d'implémentation. Environnement `jsdom`, assertions étendues via `@testing-library/jest-dom`.
 
 ```javascript
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
-import ConfirmDialog from './ConfirmDialog';
-
-describe('ConfirmDialog Component', () => {
-  it('should render the dialog when isOpen is true', () => {
-    render(
-      <ConfirmDialog 
-        isOpen={true} 
-        title="Supprimer le projet ?" 
-        message="Cette action est irréversible." 
-        onConfirm={() => {}} 
-        onCancel={() => {}} 
-      />
-    );
-    
-    // Vérification de la présence des éléments
+describe('ConfirmDialog', () => {
+  it('affiche le dialogue quand isOpen est true', () => {
+    render(<ConfirmDialog isOpen title="Supprimer le projet ?"
+             message="Action irréversible." onConfirm={() => {}} onCancel={() => {}} />);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('Supprimer le projet ?')).toBeInTheDocument();
-    expect(screen.getByText('Cette action est irréversible.')).toBeInTheDocument();
   });
 
-  it('should call onConfirm when confirm button is clicked', () => {
-    const handleConfirm = vi.fn(); // Mock function de Vitest
-    
-    render(
-      <ConfirmDialog 
-        isOpen={true} 
-        title="Test" 
-        onConfirm={handleConfirm} 
-        onCancel={() => {}} 
-      />
-    );
-    
-    // Simulation du clic utilisateur
+  it('appelle onConfirm au clic', () => {
+    const handleConfirm = vi.fn();
+    render(<ConfirmDialog isOpen title="Test" onConfirm={handleConfirm} onCancel={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: /confirmer/i }));
-    
-    // Vérification de l'appel
     expect(handleConfirm).toHaveBeenCalledTimes(1);
   });
 });
 ```
 
-Composants largement couverts par les tests :
-- `BrandLogo` — Rendu conditionnel et attributs dynamiques
-- `ConfirmDialog` — Modales interactives avec isolation de focus
-- `ErrorBoundary` — Capture des exceptions React
-- `ImageUploader` — Mock de l'API File et événements drag/drop
-- `UserProfileMenu` — Navigation dynamique basée sur le rôle
+Composants couverts : `BrandLogo`, `ConfirmDialog`, `ErrorBoundary`, `ImageUploader`, `UserProfileMenu`.
 
-```bash
-# Lancement des tests en mode watch avec couverture de code
-npm run test:coverage
-```
+### 11.3 Tests d'intégration (Backend)
 
-## 11.3 Tests d'intégration Backend
-
-**Outil :** Vitest + Supertest  
-**Approche :** Tester l'application Express dans son ensemble. Supertest permet de simuler des requêtes HTTP directes vers l'application Express, sans avoir besoin de démarrer un vrai serveur réseau.
-
-### Stratégie de Mocking et Base de données
-Les tests backend ciblent la logique des contrôleurs et des middlewares. Lors de ces tests, l'accès à la base de données Supabase est "mocké" (simulé) à l'aide de `vi.mock()` pour éviter de polluer une base réelle et garantir la rapidité d'exécution.
-
-### Exemple de Test (Compétence C2.2.2) : Protection des Routes (`server/__tests__/auth.test.js`)
-
-Afin de satisfaire la compétence C2.2.2 (Développer un harnais de test unitaire), une suite de tests complète a été développée dans le dossier `server/__tests__`. Le fichier `auth.test.js` valide spécifiquement que notre sécurité JWT est intraitable face à des requêtes malveillantes.
+**Vitest + Supertest** — requêtes HTTP directes vers l'app Express sans serveur réseau. La BDD est mockée (`vi.mock()`) pour la rapidité et l'isolation.
 
 ```javascript
-import request from 'supertest';
-import { describe, it, expect, vi } from 'vitest';
-import app from '../app.js'; // Import de l'instance Express
-
-// On simule le module supabase pour simuler le rejet du token
 vi.mock('../config/supabase.js', () => ({
-  supabase: {
-    auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: { message: 'Invalid token' } })
-    }
-  }
+  supabase: { auth: { getUser: vi.fn().mockResolvedValue(
+    { data: { user: null }, error: { message: 'Invalid token' } }) } }
 }));
 
 describe('Middleware: requireAuth', () => {
-  it('should reject requests without an Authorization header', async () => {
+  it('rejette une requête sans header Authorization', async () => {
     const res = await request(app).get('/api/projects');
-    
     expect(res.status).toBe(401);
-    expect(res.body).toEqual({
-      error: 'Non autorisé',
-      details: 'Token manquant ou mal formaté'
-    });
-  });
-
-  it('should reject requests with an invalid JWT token', async () => {
-    const res = await request(app)
-      .get('/api/projects')
-      .set('Authorization', 'Bearer faketoken123');
-      
-    expect(res.status).toBe(401);
-    expect(res.body.error).toBe('Token invalide');
+    expect(res.body).toEqual({ error: 'Non autorisé', details: 'Token manquant ou mal formaté' });
   });
 });
 ```
 
-### Autres scénarios d'intégration couverts :
-- **Rate Limiting** : Envoi de 1001 requêtes consécutives pour vérifier l'activation du code HTTP 429 Too Many Requests.
-- **Role Middleware** : Tentative d'accès à la route `POST /api/projects` avec un token JWT estampillé avec le rôle `client`. Vérification du renvoi de l'erreur HTTP 403 Forbidden.
-- **Upload Multer** : Envoi d'un fichier `.exe` malveillant pour vérifier que le filtre MIME de Multer le rejette correctement avec une erreur HTTP 400 Bad Request.
+Fichiers de test (`server/__tests__/`) : `auth`, `roleMiddleware`, `security`, `routes`, `imageProcessor`, `health`, `404`. Scénarios couverts : rejet JWT invalide, HTTP 403 pour un client tentant `POST /api/projects`, rejet d'un `.exe` par Multer (400), activation du 429 sous rate limiting.
 
-## 11.4 Tests End-to-End (E2E)
+### 11.4 Tests End-to-End
 
-**Outil :** Playwright  
-**Approche :** Simuler un vrai navigateur Chromium ou WebKit qui exécute du code, clique sur des boutons et navigue à travers l'application.
-
-Playwright est configuré pour lancer automatiquement le serveur de développement local avant de démarrer les tests, assurant ainsi un environnement complètement fonctionnel.
-
-### Exemple de Test E2E : Parcours d'authentification
-
-Ce test valide que le parcours critique (l'inscription d'un studio) fonctionne du point de vue d'un utilisateur humain.
+**Playwright** — vrai navigateur Chromium/WebKit ; le serveur dev est lancé automatiquement avant les tests. Un échec E2E **annule le déploiement** Vercel.
 
 ```typescript
-import { test, expect } from '@playwright/test';
-
-test.describe('Authentication Flow', () => {
-  test('un studio peut se connecter et accéder au dashboard', async ({ page }) => {
-    // 1. Navigation vers la page de login
-    await page.goto('/login');
-    
-    // 2. Vérification du rendu de la page
-    await expect(page).toHaveTitle(/Connexion | Visuals.co/i);
-    
-    // 3. Interaction utilisateur : remplissage du formulaire
-    await page.fill('input[name="email"]', 'test.studio@visuals.co');
-    await page.fill('input[name="password"]', 'MotDePasseSecurise123!');
-    
-    // 4. Soumission
-    await page.click('button[type="submit"]');
-    
-    // 5. Attente de la navigation et vérification
-    await page.waitForURL('/studio');
-    
-    // 6. Assertion sur le contenu protégé
-    await expect(page.locator('h1')).toContainText('Tableau de bord');
-    
-    // 7. Vérification de la persistance de la session
-    const localStorage = await page.evaluate(() => window.localStorage.getItem('sb-uulzxqhnmojjsdkqekzo-auth-token'));
-    expect(localStorage).not.toBeNull();
-  });
+test('un studio se connecte et accède au dashboard', async ({ page }) => {
+  await page.goto('/login');
+  await page.fill('input[name="email"]', 'test.studio@visuals.co');
+  await page.fill('input[name="password"]', 'MotDePasseSecurise123!');
+  await page.click('button[type="submit"]');
+  await page.waitForURL('/studio');
+  await expect(page.locator('h1')).toContainText('Tableau de bord');
 });
 ```
 
-Les tests E2E tournent obligatoirement dans notre pipeline CI GitHub Actions. S'ils échouent, le déploiement sur Vercel est annulé.
+---
+
+## 12. Accessibilité & RGPD
+
+### 12.1 Accessibilité (RGAA 4.1 / WCAG 2.1 AA)
+
+| Critère | Implémentation |
+|---------|----------------|
+| Navigation clavier | Tout l'Espace Client navigable au `Tab` ; **Focus Trap** dans les modales (fermeture `Escape`) |
+| Rôles ARIA | `role="dialog"`, `role="alert"`, `aria-hidden` sur les icônes décoratives |
+| Boutons sans texte | `aria-label` systématique (ex. « Fermer la modale ») |
+| Contrastes | Ratio ≥ 4.5:1 validé (blanc cassé `#F5F5F5` sur fond `#0A0A0A`) |
+| Sémantique HTML5 | `<main>`, `<nav>`, `<aside>` ; hiérarchie stricte des titres (h1 unique) |
+| Focus visible | `focus-visible:ring-2` (contour doré au clavier) |
+
+### 12.2 RGPD
+
+Visuals.co agit comme **sous-traitant** (Data Processor) pour les studios (Data Controllers).
+
+- **Minimisation** : seuls email + mot de passe exigés à l'inscription.
+- **Droit à l'oubli (art. 17)** : « Supprimer mon compte » → `DELETE FROM auth.users` ; le `ON DELETE CASCADE` détruit instantanément toute l'empreinte.
+- **Portabilité (art. 20)** : export ZIP complet d'un projet (`/api/projects/:id/export`).
+- **Rétention** : IP des logs purgées après 30 jours ; staging alimenté par données anonymisées (Faker.js).
 
 ---
 
-# 12. Conformité Légale : RGPD et Accessibilité (RGAA)
+## 13. CI/CD, conteneurisation & déploiement
 
-## 12.1 Traitement des Données Personnelles (RGPD)
+Deux pipelines GitHub Actions **autonomes**, un par dépôt.
 
-Visuals.co agissant en tant que "Sous-traitant" (Data Processor) pour le compte des studios (Data Controllers), l'architecture garantit une conformité stricte au Règlement Général sur la Protection des Données (RGPD).
+### 13.1 Intégration continue (CI)
 
-### Cycle de vie de la donnée
-- **Principe de minimisation** : Lors de l'inscription, seuls l'email et un mot de passe sont exigés. Aucune donnée personnelle superflue n'est collectée.
-- **Droit à l'oubli (Article 17)** : Lorsqu'un utilisateur clique sur "Supprimer mon compte", la base de données exécute une fonction `DELETE FROM auth.users`. Grâce aux contraintes `ON DELETE CASCADE` évoquées plus haut, l'intégralité de son empreinte numérique (projets, images, commentaires) est instantanément et irréversiblement détruite.
-- **Portabilité (Article 20)** : L'API permet au Studio de télécharger un ZIP complet d'un projet (`/api/projects/:id/export`), garantissant qu'il n'est pas "prisonnier" de l'application (Vendor Lock-in).
-
-### Anonymisation et Purge
-- Les adresses IP stockées dans les logs de sécurité (Cloud Run) sont purgées automatiquement après 30 jours (politique de rétention GCP).
-- L'environnement de test et de staging utilise des jeux de données générés aléatoirement (Faker.js). Aucune donnée de production n'est copiée en staging sans avoir été préalablement anonymisée via un script SQL dédié (remplacement des emails par `test+id@example.com`).
-
-## 12.2 Accessibilité Numérique (RGAA / WCAG)
-
-L'Espace Client étant une interface publique potentiellement consultée par un large spectre d'utilisateurs, la conformité aux normes d'accessibilité (RGAA 4.1 / WCAG 2.1 niveau AA) a dicté de nombreux choix d'interface.
-
-### Mesures techniques implémentées :
-
-| Critère d'accessibilité | Implémentation technique React / HTML |
-|-------------------------|---------------------------------------|
-| **Navigation Clavier** | L'intégralité de l'Espace Client est navigable via la touche `Tab`. Les modales (ex: Image plein écran) implémentent un "Focus Trap" (le focus clavier reste bloqué dans la modale tant qu'elle n'est pas fermée via `Escape`). |
-| **Rôles ARIA** | Utilisation systématique de `role="dialog"`, `role="alert"`, et `aria-hidden="true"` (pour cacher les icônes purement décoratives aux lecteurs d'écran). |
-| **Boutons sans texte** | Chaque bouton ne contenant qu'une icône (ex: Bouton de fermeture 'X') possède un attribut `aria-label="Fermer la modale"`. |
-| **Contrastes (Ratio 4.5:1)** | La charte graphique Dark Mode a été validée à l'aide d'un outil de contraste. Le texte principal (Blanc cassé `#F5F5F5`) sur le fond noir de jais (`#1A1A1A`) garantit une lisibilité maximale pour les malvoyants. |
-| **Sémantique HTML5** | Refus des "Div soups". Le layout utilise `<main>`, `<nav>`, `<aside>` et respecte une hiérarchie stricte des titres (`h1` unique, puis `h2`, `h3`). |
-| **Focus Visible** | Les styles Tailwind incluent `focus-visible:ring-2` pour qu'un contour doré apparaisse de manière évidente lorsqu'un élément est sélectionné au clavier. |
-
----
-
-# 13. CI/CD et DevOps
-
-## 13.1 Architecture CI/CD
-
-Deux pipelines indépendants, un par dépôt :
-
-### Pipeline Frontend (`myvisuals-client`)
-
-```mermaid
-## 13.1 Architecture CI/CD et Philosophie DevOps
-
-La démarche DevOps intégrée à ce projet vise à garantir une livraison continue, sécurisée et automatisée du code, en réduisant au maximum les interventions humaines manuelles lors des déploiements. Le projet étant divisé en deux dépôts distincts (`myvisuals-client` et `myvisuals-back`), l'infrastructure CI/CD repose sur deux pipelines GitHub Actions totalement autonomes.
-
-### Pipeline Frontend (`myvisuals-client`)
-
-Le pipeline Frontend a pour objectif de s'assurer que le code React/Vite est propre, testé et optimisé avant d'être distribué mondialement via le CDN de Vercel.
+Objectif : garantir un code propre, testé et buildable avant tout merge.
 
 ```mermaid
 graph LR
-    A["Push sur main"] --> B["🔍 Lint (ESLint & Prettier)"]
-    B --> C["🧪 Tests (Vitest & RTL)"]
-    C --> D["🏗️ Build (Vite/ESBuild)"]
-    D --> E["🚀 Deploy (Vercel Edge Network)"]
+    A["Push / PR"] --> B["Lint (ESLint + Prettier)"]
+    B --> C["Tests (Vitest / Supertest)"]
+    C --> D["Build (Vite / Docker)"]
 ```
 
-**Workflow GitHub Actions Frontend (Exemple de configuration `ci.yml`) :**
-
 ```yaml
-name: Frontend CI/CD Pipeline
-on:
-  push:
-    branches: [ "main", "develop" ]
-  pull_request:
-    branches: [ "main" ]
-
+# .github/workflows/ci.yml (frontend)
+name: Frontend CI/CD
+on: { push: { branches: ["main","develop"] }, pull_request: { branches: ["main"] } }
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          
-      - name: Install Dependencies
-        run: npm ci
-        
-      - name: Code Quality (Linting)
-        run: npm run lint
-        
-      - name: Unit Tests
-        run: npm run test:coverage
-        
-      - name: Production Build
-        run: npm run build
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:coverage
+      - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 ```
 
-### Pipeline Backend (`myvisuals-back`)
+**Déclenchement** — Git Flow : `feature/*` → PR (CI bloquante) ; `develop` → CI + déploiement staging ; `main` → CI + déploiement production.
 
-Le pipeline Backend est plus complexe car il implique la conteneurisation de l'API Node.js/Express, l'installation de bibliothèques C++ (via Sharp) et le déploiement sur une infrastructure Cloud (Google Cloud Run ou AWS ECS).
+> 🖼️ **[CAPTURE À INSÉRER — Fig. 13.1]** — *Onglet « Actions » du dépôt GitHub : un run de pipeline réussi (coches vertes lint → test → build). Preuve de l'intégration continue automatisée.* → `./screens/14-github-actions.png`
+
+### 13.2 Déploiement continu (CD)
 
 ```mermaid
 graph LR
-    A["Push sur main"] --> B["🔍 Lint (ESLint)"]
-    B --> C["🧪 Intégration (Supertest)"]
-    C --> D["🐳 Build Docker Image"]
-    D --> E["📦 Push to Container Registry"]
-    E --> F["🚀 Deploy to Cloud Run / ECS"]
+    A["Merge sur main"] --> B["CI complète"]
+    B --> C{"Repo ?"}
+    C -->|Front| D["Vercel (CDN Edge)"]
+    C -->|Back| E["Build Docker → AWS ECR → ECS (redeploy)"]
 ```
 
-**Workflow GitHub Actions Backend :**
+- **Frontend → Vercel** : build Vite distribué mondialement (CDN Edge). `vercel.json` redirige les 404 vers `index.html` (routage SPA).
+- **Backend → AWS** : image Docker taggée au SHA du commit (traçabilité code ↔ conteneur), poussée sur **ECR**, puis **ECS** force un nouveau déploiement. Secrets injectés via AWS Secrets Manager.
 
-Le workflow Backend intègre une étape cruciale de création d'image Docker. L'image est d'abord testée localement dans le runner GitHub Actions, puis taggée avec le SHA du commit git, garantissant ainsi une traçabilité parfaite entre le code source et le conteneur déployé en production.
+> 🖼️ **[CAPTURE À INSÉRER — Fig. 13.2]** — *Preuve de déploiement : tableau de bord Vercel (déploiement « Ready » avec l'URL de prod) et/ou la console AWS ECS montrant le service en cours d'exécution. Montre la dernière version en ligne.* → `./screens/16-deploiement.png`
 
-## 13.2 Déclenchement et Stratégie de Branches (Git Flow)
+### 13.3 Conteneurisation Docker
 
-La stratégie de gestion de code source s'inspire du modèle Git Flow simplifié :
-- **Branche `main`** : Reflète exactement l'état de la production. Seuls les merges depuis des Pull Requests approuvées sont autorisés. Un push ou un merge sur cette branche déclenche le déploiement final.
-- **Branche `develop`** : Branche d'intégration continue. Les développements quotidiens sont fusionnés ici.
-- **Branches `feature/*`** : Créées pour chaque nouvelle fonctionnalité (ex: `feature/annotation-tickets`).
-- **Branches `hotfix/*`** : Créées pour les corrections d'urgence en production.
-
-Les pipelines se déclenchent automatiquement :
-1. **Sur chaque Pull Request** : Exécution des linters et des tests (CI). Bloque le merge si les tests échouent.
-2. **Sur chaque Push vers `develop`** : CI complet + Déploiement sur l'environnement de *Staging* (pré-production).
-3. **Sur chaque Push vers `main`** : CI complet + Build Docker + Déploiement en *Production* (CD).
-
-## 13.3 Conteneurisation Docker (Backend)
-
-L'API Express est intégralement conteneurisée. L'utilisation de Docker garantit que l'application s'exécutera de manière identique sur l'ordinateur du développeur, sur le serveur d'intégration et en production, éliminant ainsi le fameux problème "Ça marche sur ma machine".
-
-Le `Dockerfile` utilisé est de type **Multi-stage build**. Cette technique permet de compiler le code et d'installer les dépendances de développement dans une première image, puis de copier uniquement les artefacts nécessaires dans une seconde image de production ultra-légère (Alpine).
-
-**Dockerfile détaillé et commenté :**
+`Dockerfile` **multi-stage** : build complet puis image de production Alpine ultra-légère (~150 Mo vs ~800 Mo).
 
 ```dockerfile
-# Stage 1 : Build (Base image avec Node.js complet)
 FROM node:20 AS builder
-
-# Définition du répertoire de travail
 WORKDIR /app
-
-# Copie des fichiers de dépendances
 COPY package*.json ./
-
-# Installation propre des dépendances (inclut les devDependencies pour le build si nécessaire)
 RUN npm ci
-
-# Copie du code source
 COPY . .
 
-# Stage 2 : Production (Image minimaliste basée sur Alpine Linux)
 FROM node:20-alpine AS production
-
-# Variables d'environnement par défaut
-ENV NODE_ENV=production
-ENV PORT=5001
-
+ENV NODE_ENV=production PORT=5001
 WORKDIR /app
-
-# Copie des fichiers de dépendances
 COPY package*.json ./
-
-# Installation UNIQUEMENT des dépendances de production (réduit drastiquement la taille et les failles de sécurité)
 RUN npm ci --only=production
-
-# Installation de librairies système requises par Sharp (C++) pour le traitement d'images
-RUN apk add --no-cache vips-dev build-base
-
-# Copie du code source depuis l'étape de build
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/server.js ./
-
-# Exposition du port
+RUN apk add --no-cache vips-dev build-base   # requis par Sharp (C++)
+COPY --from=builder /app ./
 EXPOSE 5001
-
-# Commande de démarrage sécurisée (pas de root)
-USER node
+USER node                                     # pas de root
 CMD ["node", "server.js"]
 ```
 
-### Justification des choix Docker :
-1. **Multi-stage build** : L'image finale ne pèse que ~150 Mo, contre plus de 800 Mo si nous avions gardé l'image `node:20` de base. Cela accélère le temps de déploiement et réduit la surface d'attaque.
-2. **Alpine Linux** : Distribution Linux ultra-légère (5 Mo) offrant le strict nécessaire.
-3. **`USER node`** : Pour des raisons de sécurité, le conteneur ne s'exécute pas en tant que `root`, mais avec un utilisateur restreint `node` fourni nativement par l'image officielle.
-4. **`apk add vips-dev`** : Indispensable pour la librairie de traitement d'images `sharp` qui compile du code C++ à la volée.
+**Justifications** : multi-stage (surface d'attaque réduite), Alpine (5 Mo), `USER node` (moindre privilège), `vips-dev` (dépendance native de Sharp). Un `docker-compose.yml` orchestre la stack en local (`docker-compose up`).
 
-## 13.4 Orchestration Locale (Docker Compose)
+### 13.4 Sobriété numérique (Green IT)
 
-Pour faciliter l'onboarding de nouveaux développeurs sur le projet, un fichier `docker-compose.yml` orchestre l'ensemble de la stack en local. Une simple commande `docker-compose up` permet de lancer l'API, le frontend, et de lier les variables d'environnement locales de manière transparente.
-
-```yaml
-version: '3.8'
-services:
-  api:
-    build: 
-      context: ./server
-    ports:
-      - "5001:5001"
-    env_file:
-      - ./server/.env
-    volumes:
-      - ./server:/app
-      - /app/node_modules
-    command: npm run dev
-```
-
-## 13.5 Plateformes Cloud et Déploiement
-
-### Vercel (Frontend)
-Le déploiement frontend est confié à **Vercel**, la plateforme créée par les fondateurs de Next.js.
-- **CDN Edge Network** : Les assets compilés par Vite sont distribués sur des centaines de serveurs à travers le monde, garantissant un temps de chargement minime (< 1s) peu importe la localisation du client.
-- **Routage SPA** : Le fichier `vercel.json` est configuré pour rediriger toutes les requêtes 404 vers `index.html`, afin que React Router puisse prendre le relais côté client.
-
-### Google Cloud Run (Backend)
-L'API Express est déployée sur **Google Cloud Run** (ou AWS ECS), un service serverless pour conteneurs.
-- **Auto-scaling natif** : Le service peut s'échelonner automatiquement de 0 à N instances en fonction du trafic réseau. Si aucun utilisateur n'utilise l'API la nuit, le nombre d'instances tombe à 0, ne générant aucun coût (Scale-to-Zero).
-- **Gestion des Secrets** : Les variables sensibles (`SUPABASE_SERVICE_ROLE_KEY`) sont stockées de manière cryptée dans Google Cloud Secret Manager et injectées au démarrage du conteneur.
-- **Load Balancing** : La répartition de charge est gérée automatiquement par Google Cloud, assurant une disponibilité de 99.9%.
-
-## 13.6 Sobriété Numérique (Green IT)
-
-La conception de Visuals.co intègre des principes stricts d'éco-conception logicielle pour réduire son empreinte carbone, particulièrement critique pour une application manipulant des médias lourds.
-
-1. **Optimisation des flux réseaux** : Transformation à la volée des images (via Sharp) en WebP avant transmission au client. Un WebP est en moyenne 30% plus léger qu'un JPEG à qualité équivalente.
-2. **Lazy Loading agressif** : Les images de l'Espace Client ne sont chargées par le réseau que lorsqu'elles entrent dans le viewport de l'utilisateur (via IntersectionObserver natif HTML `loading="lazy"`).
-3. **Scale-to-Zero** : En hébergeant l'API sur Cloud Run, le serveur s'éteint totalement en l'absence de trafic, ne consommant ni électricité ni ressources CPU la nuit ou le weekend.
-4. **Purge des orphelins** : Un script CRON (via les Edge Functions Supabase) supprime définitivement des buckets Storage les fichiers dont le statut est marqué comme `deleted` depuis plus de 30 jours, libérant ainsi de l'espace disque sur les datacenters.
-
-## 13.7 Environnement de Développement, IDE et Outils
-
-Pour garantir une expérience de développement unifiée et reproductible entre tous les membres de l'équipe, l'environnement de développement est standardisé :
-
-- **Éditeur de code (IDE)** : Visual Studio Code (VSCode).
-- **Compilateur Frontend** : Vite (basé sur ESBuild) pour une transpilation instantanée. Les anciens bundlers lourds comme Webpack ont été proscrits pour réduire la consommation CPU locale.
-- **Versionning** : Git en ligne de commande, avec convention `Conventional Commits` (ex: `feat: ajout des annotations`, `fix: erreur CORS`).
-- **Qualité locale (Pre-commit hooks)** : Husky est configuré pour lancer automatiquement ESLint et Prettier *avant* chaque commit. Il est impossible de valider un code mal indenté ou contenant des "code smells".
-- **Database Locale** : Supabase CLI permet de faire tourner une réplique exacte de la base de données de production sur Docker en local pour le développement hors-ligne.
+- **WebP à la volée** (Sharp) : −30 % de poids réseau vs JPEG.
+- **Lazy loading agressif** : images chargées à l'entrée dans le viewport.
+- **Auto-scaling** : réduction automatique des instances en heures creuses.
+- **Purge des orphelins** : CRON (Edge Functions Supabase) supprimant les fichiers `deleted` > 30 jours.
 
 ---
 
-# 14. Documentation API (Swagger)
+## 14. Cahier de recettes (C2.3.1)
 
-## 14.1 Configuration
+Le harnais automatisé (Vitest + Playwright) est complété par un **Cahier de Recettes manuel (UAT)** validant le prototype d'un point de vue métier.
 
-La documentation interactive de l'API est accessible à l'adresse :  
-**`http://localhost:5001/api-docs`**
+### 14.1 Recette fonctionnelle (parcours critiques)
 
-Elle est générée automatiquement via `swagger-jsdoc` à partir des commentaires JSDoc dans le code et servie par `swagger-ui-express`.
+| ID | Cas d'usage | Action | Résultat attendu | Statut |
+|----|-------------|--------|------------------|--------|
+| **CR-01** | Inscription Studio | Formulaire (Nom, SIRET, email, mdp fort) | Compte + trigger profil ; redirection `/studio` | ✅ |
+| **CR-02** | Création projet | « Nouveau projet » + client assigné | Projet dans le Kanban, URL avec UUID | ✅ |
+| **CR-03** | Upload lourd (>50 Mo) | Drag & drop TIFF | Progression, filtre Multer OK, thumbnail WebP (Sharp) | ✅ |
+| **CR-04** | Annotation | Clic à (x 45 %, y 60 %) | Pastille numérotée + ticket dans la sidebar | ✅ |
+| **CR-05** | Protection RLS | Client A tente le projet du Client B | Erreur 403 / introuvable (bloqué par RLS) | ✅ |
+| **CR-06** | Export ZIP | « Télécharger la sélection » | Stream `.zip` à la volée sans saturer la RAM | ✅ |
 
-```javascript
-const swaggerSpecs = swaggerJsdoc({
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Visuals.co API',
-      version: '1.0.0',
-      description: 'API pour la plateforme Visuals.co',
-    },
-    servers: [{ url: 'http://localhost:5001' }],
-  },
-  apis: ['./routes/*.js'],
-});
-```
+### 14.2 Scénario détaillé — CR-01 (inscription & sécurité)
 
-## 14.2 Avantages
-
-- Documentation toujours à jour avec le code
-- Interface interactive permettant de tester les endpoints
-- Conforme au standard OpenAPI 3.0
-- Facilite l'intégration par des développeurs tiers
+- **Pré-conditions** : base staging vierge, navigateur en mode incognito.
+- **Données** : Nom `Studio Harcourt Test`, SIRET `12345678900012`, email `harcourt@test.com`, mdp faible `password123`, mdp fort `Visuals!2026`.
+- **Déroulement** :
+  1. Accès à `staging.visuals.co/signup`, rôle « Studio ».
+  2. Saisie avec le **mdp faible** → **résultat attendu** : erreur « Mot de passe trop faible », HTTP 400, création bloquée. ✅
+  3. Correction avec le **mdp fort** → soumission.
+- **Résultat final** : redirection `/studio` ; ligne dans `auth.users` ; profil alimenté par le trigger avec le SIRET ; entrée `REGISTER_SUCCESS` dans `audit_logs`.
+- **Statut** : ✅ **Validé (sans régression)**.
 
 ---
 
-# 15. Déploiement
+## 15. Plan de correction des bogues
 
-## 15.1 Environnements
+Suivi via les **GitHub Issues** couplées au Git Flow.
 
-| Environnement | Frontend | Backend | Base de données |
-|---------------|----------|---------|-----------------|
-| **Développement** | localhost:5173 (Vite) | localhost:5001 (Nodemon) | Supabase Cloud |
-| **Production** | Vercel (CDN mondial) | AWS ECS (Docker) | Supabase Cloud |
+**Cycle de vie d'un bug (exemple réel — Issue #42)**
 
-## 15.2 Variables d'environnement
-
-### Frontend (.env)
-```
-VITE_SUPABASE_URL=https://uulzxqhnmojjsdkqekzo.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5...
-VITE_API_URL=http://localhost:5001/api
-```
-
-### Backend (.env)
-```
-SUPABASE_URL=https://uulzxqhnmojjsdkqekzo.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5...
-PORT=5001
-CLIENT_URL=http://localhost:5173
-```
-
-## 15.3 Processus de déploiement
-
-1. Le développeur pousse son code sur `main`
-2. GitHub Actions déclenche le pipeline CI (lint → test → build)
-3. Si tous les tests passent :
-   - **Frontend** : Vercel CLI build et déploie automatiquement
-   - **Backend** : Docker image poussée sur AWS ECR, ECS force un nouveau déploiement
-4. Le site est à jour en quelques minutes
+1. **Détection** — « Création de projet impossible avec un nom de client contenant une apostrophe ». Sévérité : haute (bloquant). Environnement : production (Chrome/Mac).
+2. **Branche dédiée** — `git checkout -b hotfix/issue-42-client-name-escape` depuis `main`.
+3. **Résolution** — cause : validation Regex trop stricte côté front (Zod). Correctif : `.regex(/^[a-zA-Z0-9\s'-]+$/)`. **Ajout d'un test TDD** `it("autorise l'apostrophe dans le nom du client")` pour prévenir la régression.
+4. **Clôture** — Pull Request → CI verte ✅ → Squash & Merge ; l'Issue #42 se ferme automatiquement.
 
 ---
 
-# 16. Bilan et Perspectives
+## 16. Historique des versions
 
-## 16.1 Bilan technique
+Projet versionné sous **Git** (dépôts privés GitHub), commits en **Conventional Commits** générant le changelog.
+
+| Version | Jalon | Contenu principal |
+|---------|-------|-------------------|
+| v0.1 | Initialisation | Scaffolding Vite + Express, Auth Supabase, schéma initial |
+| v0.4 | Cœur métier | CRUD projets/clients/assets, upload Multer + Sharp |
+| v0.6 | Collaboration | Annotations (x/y), messagerie, notifications Realtime |
+| v0.8 | Sécurité & tests | RLS complet, RBAC, harnais Vitest/Supertest, OWASP |
+| v0.9 | Dossiers & équipe | Smart Folders (arbre), team members, forgot/reset password |
+| v1.0 | Industrialisation | Docker multi-stage, CI/CD, Swagger, accessibilité, déploiement |
+
+L'historique des commits retrace la genèse de l'application, de l'initialisation à la sécurisation OWASP.
+
+---
+
+## 17. Manuels
+
+### 17.1 Manuel de déploiement
+
+**Pré-requis** : comptes Vercel, AWS, Supabase ; Docker ; Node.js 20.
+
+1. **Base de données** — créer le projet Supabase, exécuter `server/scripts/database_schema.sql`, puis appliquer `server/scripts/migrations/*` dans l'ordre numérique via le SQL Editor.
+2. **Backend (AWS)** — pousser `server/` sur GitHub ; construire l'image Docker → ECR ; déployer sur ECS ; injecter `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` via Secrets Manager ; noter l'URL d'API.
+3. **Frontend (Vercel)** — lier `client/` ; définir `VITE_API_URL` (URL back), `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` ; « Deploy ».
+
+### 17.2 Manuel d'utilisation
+
+**Guide Studio (workflow rapide)**
+
+1. `visuals.co/signup` → renseigner les informations Studio (SIRET requis).
+2. Dashboard → « Nouveau Client » → créer une fiche.
+3. Créer un **Projet**, y assigner le client.
+4. Dans le projet → **Upload** → glisser-déposer TIFF/RAW/JPG.
+5. Onglet **Partage** → générer un lien sécurisé, l'envoyer au client.
+6. Le client (sans compte) ouvre le lien, visionne en HD et laisse des **tickets de retouche** reçus en temps réel côté Studio.
+
+### 17.3 Manuel de mise à jour
+
+- **Dépendance NPM (alerte Dependabot)** : `git checkout -b chore/update-deps` → `npm update <pkg>` → `npm run test` → push → merge (CI déploie).
+- **Base de données** : toujours créer un fichier de migration séquentiel (`013_*.sql`). **Ne jamais** modifier une table en production sans script versionné.
+
+---
+
+## 18. Bilan et perspectives
+
+### 18.1 Bilan technique (dernière version — v1.0, fonctionnelle et viable)
 
 | Critère | Résultat |
 |---------|----------|
-| Architecture 3-tiers | ✅ Implémentée (React + Express + Supabase) |
-| API RESTful | ✅ 50+ endpoints, 17 controllers |
-| Authentification sécurisée | ✅ JWT + RLS + rôles (Studio/Client) |
+| Architecture 3-tiers | ✅ React + Express + Supabase |
+| API RESTful | ✅ ~97 endpoints, 20 controllers |
+| Authentification sécurisée | ✅ JWT + RLS + RBAC |
 | Tests automatisés | ✅ Unitaires + Intégration + E2E |
 | CI/CD | ✅ 2 pipelines GitHub Actions (Vercel + AWS) |
-| Accessibilité | ✅ ARIA, navigation clavier, contrastes |
-| Conteneurisation | ✅ Docker + Docker Compose |
+| Accessibilité | ✅ ARIA, clavier, contrastes AA |
+| Conteneurisation | ✅ Docker multi-stage + Compose |
 | Documentation API | ✅ Swagger/OpenAPI 3.0 |
-| Gestion de fichiers | ✅ Supabase Storage (upload, versioning, suppression) |
 
-## 16.2 Perspectives d'évolution
+### 18.2 Perspectives
 
-- **Notifications push** : Intégration de Web Push Notifications via Supabase Realtime
-- **Intelligence artificielle** : Catégorisation automatique des assets via un modèle de vision (Google Vision API)
-- **Application mobile** : Portage en React Native pour la consultation client sur smartphone
-- **Internationalisation** : Support multilingue (i18n) pour un déploiement international
-- **Marketplace de presets** : Permettre aux studios de vendre des presets de retouche photo
+Web Push Notifications · catégorisation IA des assets (Vision API) · portage React Native · internationalisation (i18n) · marketplace de presets.
 
 ---
 
-# 17. Harnais de Tests et Cahier de Recettes (Compétence Éliminatoire)
+## Annexes
 
-Le développement de Visuals.co s'appuie sur un **harnais de tests automatisés** robuste (Vitest + Playwright) couvrant la grande majorité de la logique métier critique. Cependant, pour garantir la livraison finale, un **Cahier de Recettes Manuel (UAT - User Acceptance Testing)** a été exécuté. Il vérifie que le prototype est 100% fonctionnel d'un point de vue "Métier".
+### Annexe A — Dépendances principales
 
-## 17.1 Cahier de Recette Fonctionnel (Extrait des parcours critiques)
+**Frontend** : react 19 · react-router-dom 7 · @supabase/supabase-js 2 · axios · framer-motion · gsap · jspdf · tailwindcss 4 · hls.js · swiper · vitest · @testing-library/react.
 
-| ID | Cas d'usage (Feature) | Pré-conditions | Action de l'utilisateur | Résultat attendu | Statut |
-|----|-----------------------|----------------|-------------------------|------------------|--------|
-| **CR-01** | Inscription Studio | Navigateur vierge | Remplit le formulaire (Nom, Siret, Email, Mdp fort) et valide | Le compte Supabase est créé. Le Trigger Pl/pgSQL crée le profil. Redirection vers `/studio`. | ✅ PASS |
-| **CR-02** | Création de Projet | Connecté Studio | Clique "Nouveau projet", saisit "Shooting Vogue", assigne un client | Un nouveau projet apparaît dans le Kanban. L'URL contient son UUID. | ✅ PASS |
-| **CR-03** | Upload Asset (> 50Mo) | Dans un projet | Drag & drop d'un fichier lourd TIFF | La barre de progression affiche l'upload. Le filtre de sécurité Multer accepte le fichier. Un thumbnail WebP est généré par Sharp. | ✅ PASS |
-| **CR-04** | Ajout d'une Annotation | Connecté Studio/Client | Clic sur les coordonnées (x: 45%, y: 60%) de l'image | Une pastille numérotée apparaît au bon endroit. Un "Ticket d'annotation" est créé dans la sidebar droite. | ✅ PASS |
-| **CR-05** | Protection RLS (Client) | Connecté Client A | Tente d'accéder à l'URL du projet du Client B `api/projects/uuid-client-b` | L'API (Supertest) ou l'UI renvoie une erreur 403 / Projet introuvable, bloqué par RLS. | ✅ PASS |
-| **CR-06** | Export ZIP | Dans un projet validé | Clique sur "Télécharger la sélection" | Archiver génère un stream `.zip` à la volée contenant les originaux, sans faire planter la mémoire RAM de Node.js. | ✅ PASS |
+**Backend** : express 5 · @supabase/supabase-js 2 · archiver · cors · helmet · express-rate-limit · multer · sharp · morgan · swagger-jsdoc · swagger-ui-express · dotenv · uuid · supertest · vitest.
 
-### Fiche de Test Détaillée : Scénario CR-01 (Inscription et Sécurité)
-Afin de satisfaire à la compétence C2.3.1 (Élaborer le cahier de recette en rédigeant les scénarios de tests), voici le déroulé scripté du cas de test CR-01 :
-- **Pré-conditions** : L'environnement de test (base de données Supabase de staging) est vierge de tout utilisateur. Le testeur utilise un navigateur en mode Incognito.
-- **Données d'entrée (Inputs)** :
-  - Nom complet : `Studio Harcourt Test`
-  - SIRET : `12345678900012`
-  - Email : `harcourt@test.com`
-  - Mot de passe faible : `password123`
-  - Mot de passe fort : `Visuals!2026`
-- **Déroulement (Étapes)** :
-  1. Le testeur accède à `https://staging.visuals.co/signup`.
-  2. Le testeur choisit le rôle "Studio".
-  3. Le testeur renseigne les données d'entrée, en utilisant d'abord le mot de passe faible (`password123`).
-  4. Le testeur clique sur "Créer mon Compte".
-  5. **Résultat intermédiaire attendu** : Une erreur rouge s'affiche "Mot de passe trop faible", et le backend renvoie un code HTTP 400. La création est bloquée. (Résultat réel : OK).
-  6. Le testeur corrige avec le mot de passe fort (`Visuals!2026`).
-  7. Le testeur clique sur "Créer mon Compte".
-- **Résultat final attendu** :
-  - Le front-end redirige vers `/studio` (Dashboard).
-  - En base de données, la table `auth.users` contient une ligne avec `harcourt@test.com`.
-  - La table `public.profiles` a été automatiquement alimentée via le trigger SQL avec le `siret`.
-  - La table `audit_logs` contient une entrée "REGISTER_SUCCESS" grâce au backend `pg`.
-- **Statut final** : **✅ Validé (Sans régression)**.
-
-## 17.2 Le Harnais de Tests (Tests Automatisés)
-
-Le harnais de tests est exécuté systématiquement par la CI GitHub Actions. 
-- **Couverture de code (Coverage)** : L'objectif de 80% des chemins logiques (Branches/Statements) est atteint sur les composants critiques (`AssetController`, `ProjectController`, Modales React).
-- L'architecture garantit que si une modification brise le téléchargement d'un fichier (régression), la suite Vitest lèvera une erreur rouge `FAIL`, interdisant ainsi le déploiement sur Vercel.
-
----
-
-# 18. Suivi des Anomalies et Plan de Correction de Bugs
-
-Le suivi des bugs utilise le système d'Issues intégré à GitHub, couplé à la stratégie Git Flow.
-
-## 18.1 Cycle de vie d'un Bug (Exemple réel de production)
-
-1. **Détection et Qualification** :
-   - *Issue GitHub #42* : "Création d'un projet impossible avec un nom de client contenant une apostrophe."
-   - *Sévérité* : Haute (Bloquant métier).
-   - *Environnement* : Production (Chrome/Mac).
-2. **Assignation et Création de Branche** : 
-   - Le développeur crée une branche dédiée : `git checkout -b hotfix/issue-42-client-name-escape` depuis `main`.
-3. **Traitement et Résolution** :
-   - Le bug était lié à une validation stricte (Regex) non prévue dans le Zod Schema côté frontend.
-   - Le schéma est corrigé : `.regex(/^[a-zA-Z0-9\s'-]+$/)`.
-   - **Ajout d'un test unitaire (TDD)** : `it("should allow apostrophe in client name")` est ajouté au harnais de test pour éviter toute régression future.
-4. **Validation et Clôture** :
-   - Le développeur pousse la branche, ouvre une Pull Request (PR) vers `main`.
-   - La CI lance les tests. ✅ PASS.
-   - La PR est mergée (Squash & Merge) et l'Issue #42 se ferme automatiquement.
-
----
-
-# 19. Gestion de Versions (Git) et Manuels
-
-## 19.1 Historique et Versionning
-
-L'intégralité du projet est versionnée sous **Git**.
-- Dépôts : Privés sur GitHub.
-- Conventional Commits respectés pour générer le Changelog (`feat:`, `fix:`, `refactor:`, `docs:`).
-- L'historique des commits retrace clairement la genèse de l'application (de l'initialisation Vite jusqu'à la sécurisation Owasp).
-
-## 19.2 Manuel de Déploiement
-
-Ce manuel garantit qu'un autre développeur peut reprendre et redéployer l'application de zéro.
-
-**Pré-requis** : Un compte Vercel, un compte Google Cloud (ou AWS), un compte Supabase, Docker, Node.js 20.
-
-1. **Base de données** :
-   - Créer un projet Supabase.
-   - Exécuter le fichier `server/scripts/database_schema.sql` puis appliquer les migrations dans `server/scripts/migrations/` dans l'ordre numérique via le SQL Editor.
-2. **Backend (Cloud Run)** :
-   - Pousser le dossier `server/` sur GitHub.
-   - Connecter Cloud Run au dépôt GitHub, cibler le `Dockerfile`.
-   - Injecter les secrets dans l'interface Cloud Run : `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
-   - Déployer. Noter l'URL d'API générée.
-3. **Frontend (Vercel)** :
-   - Lier le dépôt `client/` à Vercel.
-   - Définir `VITE_API_URL` avec l'URL Cloud Run obtenue à l'étape 2.
-   - Définir `VITE_SUPABASE_URL` et la clé publique anonyme.
-   - Cliquer sur "Deploy". L'application est en ligne.
-
-## 19.3 Manuel de Mise à Jour (Maintenance)
-
-- **Mise à jour d'un package NPM (ex: vulnérabilité signalée par Dependabot)** :
-  1. `git checkout -b chore/update-deps`
-  2. `npm update <package>` ou `npm install <package>@latest`
-  3. `npm run test` (Vérifier que la mise à jour ne casse rien).
-  4. Pousser, merger, la CI s'occupe du déploiement.
-- **Mise à jour Base de Données** :
-  - Toujours créer un fichier de migration séquentiel (`013_new_feature.sql`). Ne jamais modifier une table directement en production sans script de migration.
-
-## 19.4 Manuel d'Utilisation Utilisateur (Workflow Rapide)
-
-**Guide pour un nouveau Studio :**
-1. Allez sur `https://visuals.co/signup`. Remplissez vos informations de Studio (Siret requis).
-2. Depuis le *Dashboard*, cliquez sur "Nouveau Client" puis créez une fiche client.
-3. Créez un *Projet*, assignez-lui le client.
-4. Dans le projet, cliquez sur *Upload*. Glissez-déposez vos fichiers TIFF, RAW ou JPG.
-5. Une fois l'upload terminé, cliquez sur l'onglet *Partage* pour générer un lien sécurisé. Envoyez ce lien au client.
-6. Le client n'a pas besoin de compte : il clique sur le lien, visionne en haute définition, et peut cliquer directement sur l'image pour vous laisser un ticket de retouche ("Poussière sur la veste"). Vous recevrez le ticket en temps réel dans votre interface Studio !
-
----
-
-# 20. Annexes
-
-## Annexe A — Dépendances du projet
-
-### Frontend (client/package.json)
-| Package | Version | Rôle |
-|---------|---------|------|
-| react | ^19.2.0 | Bibliothèque UI |
-| react-dom | ^19.2.0 | Rendu DOM |
-| react-router-dom | ^7.13.0 | Routage |
-| @supabase/supabase-js | ^2.98.0 | Client Supabase |
-| axios | ^1.13.6 | Requêtes HTTP |
-| framer-motion | ^12.29.3 | Animations |
-| gsap | ^3.14.2 | Animations complexes |
-| jspdf | ^4.2.1 | Génération PDF |
-| jspdf-autotable | ^5.0.8 | Tableaux dans les PDF |
-| lucide-react | ^0.563.0 | Icônes |
-| tailwindcss | ^4.1.18 | CSS utility-first |
-| hls.js | ^1.6.15 | Streaming Vidéo |
-| swiper | ^12.1.0 | Carrousel Espace Client |
-| vitest | ^3.2.0 | Framework de test |
-| @testing-library/react | ^16.3.0 | Tests composants |
-
-### Backend (server/package.json)
-| Package | Version | Rôle |
-|---------|---------|------|
-| express | ^5.2.1 | Framework HTTP |
-| @supabase/supabase-js | ^2.98.0 | Client Supabase |
-| archiver | ^7.0.1 | Création de lots ZIP dynamiques |
-| cors | ^2.8.6 | Cross-Origin Resource Sharing |
-| helmet | ^8.2.0 | Headers de sécurité |
-| express-rate-limit | ^8.5.2 | Protection anti-brute-force |
-| multer | ^2.1.1 | Upload de fichiers |
-| sharp | ^0.35.3 | Traitement d'images & Watermark (C++) |
-| morgan | ^1.10.1 | Logging HTTP |
-| swagger-jsdoc | ^6.3.0 | Génération doc OpenAPI |
-| swagger-ui-express | ^5.0.1 | UI Swagger |
-| dotenv | ^17.3.1 | Variables d'environnement |
-| uuid | ^13.0.0 | Identifiants uniques |
-| supertest | ^7.1.0 | Tests HTTP |
-| vitest | ^3.2.0 | Framework de test |
-
-## Annexe B — Commandes utiles
+### Annexe B — Commandes utiles
 
 ```bash
 # Développement
-cd client && npm run dev        # Frontend (port 5173)
-cd server && npm run dev        # Backend (port 5001)
+cd client && npm run dev          # Front (5173)
+cd server && npm run dev          # API  (5001)
 
 # Tests
-cd client && npm run test:unit  # Tests unitaires frontend
-cd server && npm run test:api   # Tests API backend
-cd client/e2e && npx playwright test  # Tests E2E
+cd client && npm run test:unit
+cd server && npm run test:api
+cd client/e2e && npx playwright test
 
-# Build
-cd client && npm run build      # Build production frontend
-cd server && docker build -t visuals-api .  # Build Docker backend
-
-# Qualité
-cd client && npm run lint       # Lint frontend
-cd server && npm run lint       # Lint backend
-cd client && npm run format     # Format Prettier
-cd server && npm run format     # Format Prettier
+# Build & qualité
+cd client && npm run build
+cd server && docker build -t visuals-api .
+npm run lint && npm run format
 ```
 
-## Annexe C — Liens du projet
+### Annexe C — Liens du projet
 
 | Ressource | URL |
 |-----------|-----|
@@ -1814,7 +1081,11 @@ cd server && npm run format     # Format Prettier
 | Documentation API | localhost:5001/api-docs |
 | Supabase Dashboard | supabase.com/dashboard |
 
+### Annexe D — Maquettes du prototype
+
+*Captures Figma (Studio Desktop-First / Client Mobile-First) jointes lors de la présentation orale.*
+
 ---
 
-*Document rédigé dans le cadre de la certification RNCP 39583 — Expert en Développement Logiciel (Niveau 7)*  
-*Flavien Deroy — Juillet 2026*
+*Document rédigé dans le cadre de la certification RNCP 39583 — Expert en Développement Logiciel (Niveau 7).*
+*Flavien Deroy — Juillet 2026.*

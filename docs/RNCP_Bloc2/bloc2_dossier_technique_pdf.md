@@ -69,7 +69,7 @@ Actuellement, les studios de création jonglent entre 5 et 8 outils différents 
 |:---|:---|:---|
 | **Dashboard Studio** | Gestion projets, clients, tâches, facturation SmartInvoice | React 19, Context API, jsPDF |
 | **Espace Client** | Vue des projets attribués, téléchargements HD, messagerie | React Router v7, Supabase Realtime |
-| **Showroom** | Galerie de présentation immersive, métadonnées EXIF | Framer Motion, GSAP, HLS.js |
+
 | **Engine Médias** | Processing images, filigrane dynamique, export ZIP | Sharp (C++), Archiver, Multer |
 | **Sécurité & Auth** | Authentification double rôle, accès RLS, CORS, Rate Limit | JWT, Helmet, Express Rate Limit |
 
