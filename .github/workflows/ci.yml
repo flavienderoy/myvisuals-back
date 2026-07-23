@@ -119,9 +119,13 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
       - name: Build & Deploy to Cloud Run
         run: |
+          # Step 1: Explicitly clear old secrets from the service to avoid type conflicts
+          # (We use || true so it doesn't fail if the service or secrets don't exist yet)
+          gcloud run services update $CLOUD_RUN_SERVICE --region $GCP_REGION --clear-secrets || true
+          
+          # Step 2: Deploy with standard environment variables
           gcloud run deploy $CLOUD_RUN_SERVICE \
             --source ./server \
             --region $GCP_REGION \
             --allow-unauthenticated \
-            --remove-secrets=SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY \
             --set-env-vars "NODE_ENV=production,CLIENT_URL=${{ secrets.CLIENT_URL }},SUPABASE_URL=${{ secrets.SUPABASE_URL }},SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
