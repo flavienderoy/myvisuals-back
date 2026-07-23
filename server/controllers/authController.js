@@ -57,29 +57,43 @@ exports.register = async (req, res) => {
   const { email, password, name, role, siret, organization } = req.body;
   const ip = req.ip || req.connection.remoteAddress;
 
+  // --- Input validation ---
   if (!email || !password) {
     await logAuthAttempt(email, 'REGISTER', ip, 'FAILED_MISSING_CREDENTIALS');
     return res.status(400).json({ error: 'Email et mot de passe requis' });
   }
 
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Le nom complet est requis' });
+  }
+
   // 1. Password Strength Validation (Backend Enforcement)
   if (!isStrongPassword(password)) {
     await logAuthAttempt(email, 'REGISTER', ip, 'FAILED_WEAK_PASSWORD');
+    // Build a detailed breakdown of which criteria failed
+    const missing = [];
+    if (password.length < 8) missing.push('8 caractères minimum');
+    if (!/[A-Z]/.test(password)) missing.push('1 lettre majuscule');
+    if (!/[a-z]/.test(password)) missing.push('1 lettre minuscule');
+    if (!/\d/.test(password)) missing.push('1 chiffre');
+    if (!/[@$!%*?&]/.test(password)) missing.push('1 caractère spécial (@$!%*?&)');
     return res.status(400).json({ 
       error: 'Mot de passe trop faible',
-      details: 'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial.'
+      details: `Il manque : ${missing.join(', ')}.`
     });
   }
 
   try {
+    // Sanitize role — only 'studio' or 'client' are valid at registration
     const userRole = role === 'studio' ? 'studio' : 'client';
+    const trimmedName = name.trim();
 
     // 2. Call Supabase Admin API to create user securely
     const { data, error } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { name, role: userRole, siret, organization }
+      user_metadata: { name: trimmedName, role: userRole, siret: siret || null, organization: organization || null }
     });
 
     if (error) {
@@ -87,18 +101,20 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
 
-    // 3. Explicitly upsert profile in public.profiles to guarantee DB role matches
-    try {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        name: name || '',
-        email: email,
-        role: userRole,
-        siret: siret || null,
-        organization: organization || null
-      });
-    } catch (profErr) {
-      console.error('Error upserting profile in register:', profErr);
+    // 3. Explicitly upsert profile in public.profiles to guarantee name, email & role
+    //    This compensates for the trigger potentially failing or having stale logic.
+    const { error: profErr } = await supabase.from('profiles').upsert({
+      id: data.user.id,
+      name: trimmedName,
+      email: email,
+      role: userRole,
+      siret: siret || null,
+      organization: organization || null
+    });
+
+    if (profErr) {
+      console.error('Profile upsert failed during register:', profErr.message);
+      // Non-blocking: the user is already created in auth, profile can be fixed later
     }
 
     await logAuthAttempt(email, 'REGISTER', ip, 'SUCCESS');
