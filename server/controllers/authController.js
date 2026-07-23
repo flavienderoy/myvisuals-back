@@ -72,17 +72,33 @@ exports.register = async (req, res) => {
   }
 
   try {
+    const userRole = role === 'studio' ? 'studio' : 'client';
+
     // 2. Call Supabase Admin API to create user securely
     const { data, error } = await supabase.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { name, role, siret, organization }
+      user_metadata: { name, role: userRole, siret, organization }
     });
 
     if (error) {
       await logAuthAttempt(email, 'REGISTER', ip, 'FAILED_SUPABASE_ERROR');
       return res.status(400).json({ error: error.message });
+    }
+
+    // 3. Explicitly upsert profile in public.profiles to guarantee DB role matches
+    try {
+      await supabase.from('profiles').upsert({
+        id: data.user.id,
+        name: name || '',
+        email: email,
+        role: userRole,
+        siret: siret || null,
+        organization: organization || null
+      });
+    } catch (profErr) {
+      console.error('Error upserting profile in register:', profErr);
     }
 
     await logAuthAttempt(email, 'REGISTER', ip, 'SUCCESS');
