@@ -123,5 +123,4 @@ jobs:
             --source ./server \
             --region $GCP_REGION \
             --allow-unauthenticated \
-            --set-env-vars "NODE_ENV=production,CLIENT_URL=${{ secrets.CLIENT_URL }}" \
-            --set-secrets "SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest"
+            --set-env-vars "NODE_ENV=production,CLIENT_URL=${{ secrets.CLIENT_URL }},SUPABASE_URL=${{ secrets.SUPABASE_URL }},SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
