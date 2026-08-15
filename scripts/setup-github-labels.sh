@@ -18,18 +18,28 @@
 
 set -euo pipefail
 
-REPO_ARG=()
-if [[ $# -gt 0 ]]; then
-    REPO_ARG=(--repo "$1")
-    echo "Dépôt cible : $1"
-else
-    echo "Dépôt cible : dépôt courant"
-fi
-
 if ! command -v gh >/dev/null 2>&1; then
     echo "❌ GitHub CLI (gh) introuvable. Installation : brew install gh" >&2
     exit 1
 fi
+
+# Le dépôt cible est toujours résolu explicitement.
+# (Un tableau d'options vide provoquerait « unbound variable » sous `set -u`
+#  avec le bash 3.2 livré par macOS.)
+if [[ $# -gt 0 ]]; then
+    TARGET_REPO="$1"
+else
+    TARGET_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || true)
+    if [[ -z "$TARGET_REPO" ]]; then
+        echo "❌ Impossible de déterminer le dépôt courant." >&2
+        echo "   Lancez la commande depuis un dépôt git lié à GitHub," >&2
+        echo "   ou passez le dépôt en argument : $0 flavienderoy/myvisuals-back" >&2
+        exit 1
+    fi
+fi
+
+echo "Dépôt cible : $TARGET_REPO"
+echo
 
 # nom | couleur | description
 LABELS=(
@@ -78,23 +88,33 @@ LABELS=(
 
 created=0
 updated=0
+failed=0
 
 for entry in "${LABELS[@]}"; do
     IFS='|' read -r name color description <<< "$entry"
 
-    if gh label create "$name" --color "$color" --description "$description" "${REPO_ARG[@]}" 2>/dev/null; then
-        echo "  ✅ créé   : $name"
+    if gh label create "$name" --color "$color" --description "$description" --repo "$TARGET_REPO" 2>/dev/null; then
+        echo "  ✅ créé        : $name"
         created=$((created + 1))
     else
         # Le label existe déjà : on aligne couleur et description pour que les
         # deux dépôts (API et front) restent cohérents.
-        gh label edit "$name" --color "$color" --description "$description" "${REPO_ARG[@]}" >/dev/null
-        echo "  ♻️  mis à jour : $name"
-        updated=$((updated + 1))
+        if gh label edit "$name" --color "$color" --description "$description" --repo "$TARGET_REPO" >/dev/null 2>&1; then
+            echo "  ♻️  mis à jour : $name"
+            updated=$((updated + 1))
+        else
+            echo "  ⚠️  échec      : $name" >&2
+            failed=$((failed + 1))
+        fi
     fi
 done
 
 echo
-echo "Terminé — ${created} label(s) créé(s), ${updated} mis à jour."
+echo "Terminé — ${created} créé(s), ${updated} mis à jour, ${failed} en échec."
+echo "À vérifier : https://github.com/${TARGET_REPO}/labels"
+echo
 echo "Pensez à appliquer le même jeu à l'autre dépôt :"
 echo "  ./scripts/setup-github-labels.sh flavienderoy/myvisuals-client"
+
+[[ $failed -gt 0 ]] && exit 1
+exit 0
