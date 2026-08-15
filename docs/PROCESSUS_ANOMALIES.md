@@ -205,6 +205,7 @@ pas été détecté plus tôt ? qu'est-ce qui empêchera sa récidive ?
 | [ANO-2026-001](./anomalies/ANO-2026-001.md) | Conteneur en échec au démarrage après déploiement | S1 | Supervision | ✅ Vérifiée |
 | [ANO-2026-002](./anomalies/ANO-2026-002.md) | Saturation du limiteur de débit sur le tableau de bord | S3 | Recette interne | ✅ Vérifiée |
 | [ANO-2026-003](./anomalies/ANO-2026-003.md) | Inscription Studio créant un compte Client | S2 | Support client | ✅ Vérifiée |
+| [ANO-2026-004](./anomalies/ANO-2026-004.md) | Les déploiements n'atteignaient pas le service de production | S1 | Supervision | 🟠 Correctif fusionné |
 
 Modèle vierge : [`_TEMPLATE.md`](./anomalies/_TEMPLATE.md).
 

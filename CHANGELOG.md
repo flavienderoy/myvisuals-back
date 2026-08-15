@@ -18,6 +18,29 @@ Versionnage : [Semantic Versioning](https://semver.org/lang/fr/) —
 
 ---
 
+## [1.6.1] — 2026-08-15
+
+### Corrigé
+
+- **[ANO-2026-004](docs/anomalies/ANO-2026-004.md) — Les déploiements
+  n'atteignaient pas le service de production** (S1, exposition ~1 mois).
+  La chaîne déployait vers le service Cloud Run `visuals-api` alors que le
+  front-end interroge `myvisuals-back` : la production servait du code de
+  juillet malgré une chaîne verte à chaque push. `CLOUD_RUN_SERVICE` corrigé.
+- **Déploiement refusé si la configuration est incomplète** — les secrets
+  `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` n'existaient pas côté dépôt et
+  étaient injectés en chaîne vide, écrasant la configuration en place. Une
+  étape de vérification échoue désormais explicitement.
+- **Vérification post-déploiement** — la chaîne interroge `/health/ready` sur
+  l'URL réellement déployée et échoue si le service ne peut pas joindre la base
+  et le stockage. Un déploiement n'est plus réputé réussi parce que le
+  conteneur démarre, mais parce que le service peut servir une requête métier.
+- Les secrets transitent par l'environnement du runner, avec un séparateur
+  personnalisé pour `--set-env-vars` : une clé contenant une virgule cassait
+  silencieusement le découpage des variables.
+
+---
+
 ## [Non publié]
 
 _Rien pour le moment._
@@ -262,7 +285,8 @@ _Rien pour le moment._
 
 ---
 
-[Non publié]: https://github.com/flavienderoy/myvisuals-back/compare/v1.6.0...HEAD
+[Non publié]: https://github.com/flavienderoy/myvisuals-back/compare/v1.6.1...HEAD
+[1.6.1]: https://github.com/flavienderoy/myvisuals-back/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/flavienderoy/myvisuals-back/compare/v1.5.2...v1.6.0
 [1.5.2]: https://github.com/flavienderoy/myvisuals-back/compare/v1.5.1...v1.5.2
 [1.5.1]: https://github.com/flavienderoy/myvisuals-back/compare/v1.5.0...v1.5.1

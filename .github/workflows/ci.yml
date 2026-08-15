@@ -15,7 +15,12 @@ on:
 
 env:
   GCP_REGION: europe-west1
-  CLOUD_RUN_SERVICE: visuals-api
+  # ⚠️ Doit correspondre au service réellement appelé par le front
+  # (VITE_API_URL → https://myvisuals-back-*.europe-west1.run.app).
+  # La chaîne déployait auparavant vers « visuals-api », un second service que
+  # personne n'interrogeait : la CI était verte, le déploiement réussissait, et
+  # la production continuait de servir du code vieux d'un mois (ANO-2026-004).
+  CLOUD_RUN_SERVICE: myvisuals-back
 
 jobs:
   # ─────────────────────────────────
@@ -151,21 +156,88 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
+
+      # ── Garde-fou : ne jamais déployer avec une configuration incomplète ──
+      # `--set-env-vars` est *déclaratif* : un secret absent est injecté en
+      # chaîne vide et ÉCRASE la valeur en place. C'est exactement ce qui s'est
+      # produit (ANO-2026-004) : SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY
+      # n'existaient pas côté GitHub, le déploiement réussissait, et le service
+      # démarrait sans accès à la base — tout en répondant « ok » sur /health.
+      # Mieux vaut un déploiement qui échoue bruyamment qu'un service en ligne
+      # incapable de servir la moindre requête métier.
+      - name: Vérifier la présence des secrets de déploiement
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CLIENT_URL: ${{ secrets.CLIENT_URL }}
+        run: |
+          missing=""
+          [ -n "$SUPABASE_URL" ]              || missing="$missing SUPABASE_URL"
+          [ -n "$SUPABASE_SERVICE_ROLE_KEY" ] || missing="$missing SUPABASE_SERVICE_ROLE_KEY"
+          [ -n "$CLIENT_URL" ]                || missing="$missing CLIENT_URL"
+
+          if [ -n "$missing" ]; then
+            echo "::error::Secrets manquants :$missing"
+            echo "Définissez-les dans Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "✅ Les trois secrets requis sont présents."
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
+
       - name: Build & Deploy to Cloud Run
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CLIENT_URL: ${{ secrets.CLIENT_URL }}
         run: |
-          # Step 1: Explicitly clear old secrets from the service to avoid type conflicts
-          # (We use || true so it doesn't fail if the service or secrets don't exist yet)
-          gcloud run services update $CLOUD_RUN_SERVICE --region $GCP_REGION --clear-secrets || true
-          
-          # Step 2: Deploy with standard environment variables
-          gcloud run deploy $CLOUD_RUN_SERVICE \
+          # Étape 1 : purge des secrets Secret Manager éventuellement rattachés
+          # au service, pour éviter un conflit de type avec --set-env-vars.
+          gcloud run services update "$CLOUD_RUN_SERVICE" \
+            --region "$GCP_REGION" --clear-secrets || true
+
+          # Étape 2 : déploiement. Les valeurs passent par l'environnement du
+          # runner et non par interpolation directe dans la ligne de commande :
+          # une clé contenant une virgule ou un caractère spécial casserait le
+          # découpage de --set-env-vars.
+          gcloud run deploy "$CLOUD_RUN_SERVICE" \
             --source ./server \
-            --region $GCP_REGION \
+            --region "$GCP_REGION" \
             --allow-unauthenticated \
-            --set-env-vars "NODE_ENV=production,CLIENT_URL=${{ secrets.CLIENT_URL }},SUPABASE_URL=${{ secrets.SUPABASE_URL }},SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+            --set-env-vars "^@^NODE_ENV=production@CLIENT_URL=${CLIENT_URL}@SUPABASE_URL=${SUPABASE_URL}@SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}"
+
+      # ── Vérification post-déploiement ────────────────────────────────────
+      # Un déploiement « réussi » ne prouve que la mise en ligne du conteneur.
+      # Seule la sonde d'aptitude atteste que le service peut réellement servir
+      # une requête métier : elle interroge PostgreSQL et le stockage objet.
+      - name: Vérifier la sonde d'aptitude en production
+        run: |
+          URL=$(gcloud run services describe "$CLOUD_RUN_SERVICE" \
+            --region "$GCP_REGION" --format='value(status.url)')
+          echo "Service déployé : $URL"
+
+          # Un HTTP 503 (statut « down ») fait échouer `curl -f` : le corps est
+          # alors vide et la boucle réessaie, le temps que la révision prenne
+          # le trafic. Après 10 tentatives, l'échec est définitif.
+          for i in $(seq 1 10); do
+            body=$(curl -fsS --max-time 20 "$URL/health/ready" 2>/dev/null || true)
+            ready_status=$(echo "$body" | grep -o '"status":"[a-z]*"' | head -1 | cut -d'"' -f4)
+
+            if [ "$ready_status" = "ok" ]; then
+              echo "✅ /health/ready → ok — base et stockage joignables"
+              echo "$body"
+              exit 0
+            fi
+
+            echo "Tentative $i/10 — statut « ${ready_status:-injoignable} »"
+            sleep 6
+          done
+
+          echo "::error::Le service est en ligne mais /health/ready ne répond pas « ok »."
+          echo "Dernière réponse : $body"
+          exit 1

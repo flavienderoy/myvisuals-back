@@ -1,6 +1,6 @@
 {
   "name": "visuals-api",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Visuals.co — Backend API (Express + Supabase)",
   "main": "server.js",
   "scripts": {
