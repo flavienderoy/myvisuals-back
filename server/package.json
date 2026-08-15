@@ -1,6 +1,6 @@
 {
   "name": "visuals-api",
-  "version": "1.0.0",
+  "version": "1.6.0",
   "description": "Visuals.co — Backend API (Express + Supabase)",
   "main": "server.js",
   "scripts": {
@@ -11,13 +11,16 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
-    "format": "prettier --write '**/*.{js,json,md}' --ignore-path .gitignore"
+    "format": "prettier --write '**/*.{js,json,md}' --ignore-path .gitignore",
+    "audit:ci": "npm audit --audit-level=high",
+    "audit:report": "npm audit --json > audit-report.json && npm outdated || true"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@sentry/node": "^10.70.0",
     "@supabase/supabase-js": "^2.98.0",
     "archiver": "^7.0.1",
     "cors": "^2.8.6",

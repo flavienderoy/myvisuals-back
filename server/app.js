@@ -5,6 +5,17 @@ const morgan = require('morgan');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
+// ─── Supervision ───────────────────────────────────────
+// Initialisé au plus tôt : une erreur survenant au chargement des routes doit
+// pouvoir être capturée par la sonde applicative. Sans SENTRY_DSN, no-op.
+const { initMonitoring } = require('./config/monitoring');
+const { notFoundHandler, errorHandler, registerProcessHandlers } = require('./middlewares/errorHandler');
+const requestId = require('./middlewares/requestId');
+const httpLogger = require('./middlewares/httpLogger');
+
+initMonitoring();
+registerProcessHandlers();
+
 // Routes
 const projectRoutes = require('./routes/projectRoutes');
 const clientRoutes = require('./routes/clientRoutes');
@@ -26,6 +37,7 @@ const teamRoutes = require('./routes/teamRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const conversationRoutes = require('./routes/conversationRoutes');
 const authRoutes = require('./routes/authRoutes');
+const healthRoutes = require('./routes/healthRoutes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./swaggerOptions');
@@ -34,6 +46,12 @@ const app = express();
 
 // Trust reverse proxies (Google Cloud Run, Vercel, Nginx)
 app.set('trust proxy', 1);
+
+// ─── Traçabilité ───────────────────────────────────────
+// Tout premier middleware : chaque requête — y compris celles rejetées plus
+// bas par le CORS ou le rate limiter — doit porter un identifiant de
+// corrélation exploitable en cas d'anomalie.
+app.use(requestId);
 
 // ─── General Middleware ────────────────────────────────
 app.use(cors({
@@ -72,10 +90,22 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
-// Only enable morgan logging when not in test mode
-if (process.env.NODE_ENV !== 'test') {
+// ─── Journalisation ────────────────────────────────────
+// En développement : morgan('dev'), lisible à l'œil nu pendant le codage.
+// Hors développement : log d'accès JSON structuré, indispensable pour que
+// Cloud Logging puisse en dériver des métriques et des alertes.
+// En test : rien, pour ne pas polluer la sortie de Vitest.
+if (isDev) {
     app.use(morgan('dev'));
+} else if (process.env.NODE_ENV !== 'test') {
+    app.use(httpLogger);
 }
+
+// ─── Supervision ───────────────────────────────────────
+// Monté avant les routes métier et hors du préfixe /api : les sondes ne
+// doivent jamais être bloquées par le rate limiter, sous peine de déclencher
+// une fausse alerte d'indisponibilité en cas de pic de trafic.
+app.use(healthRoutes);
 
 // API Routes
 app.use('/api/projects', projectRoutes);
@@ -99,28 +129,10 @@ app.use('/api/public', publicRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/auth', authRoutes);
 
-// Health check
-app.get('/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        message: 'Visuals.co API is running',
-        timestamp: new Date().toISOString(),
-        version: '1.0.0',
-    });
-});
-
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({ error: `Route ${req.method} ${req.url} not found` });
-});
-
-// Error handler
-app.use((err, req, res, next) => {
-    console.error('Server error:', err);
-    res.status(500).json({
-        error: 'Internal server error',
-        message: process.env.NODE_ENV === 'development' ? err.message : undefined,
-    });
-});
+// ─── Gestion des erreurs ───────────────────────────────
+// Toujours en dernier : Express n'atteint ces handlers qu'après avoir épuisé
+// les routes déclarées au-dessus.
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 module.exports = app;

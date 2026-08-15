@@ -1,0 +1,112 @@
+# ================================================================
+# Mise à jour automatisée des dépendances — visuals-api
+# ================================================================
+# Politique complète, critères d'arbitrage et procédure de retour arrière :
+#   docs/PROCESSUS_DEPENDANCES.md
+#
+# Principe : Dependabot ouvre les pull requests, la chaîne d'intégration
+# continue les valide (lint → tests → build Docker → smoke test → audit), et
+# la décision de fusion reste humaine. L'automatisation supprime la veille
+# manuelle, pas l'arbitrage.
+version: 2
+
+updates:
+  # ─────────────────────────────────────────────────────────────
+  # Dépendances npm de l'API
+  # ─────────────────────────────────────────────────────────────
+  - package-ecosystem: 'npm'
+    directory: '/server'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '07:00'
+      timezone: 'Europe/Paris'
+    # Lundi matin : les mises à jour sont traitées en début de semaine, jamais
+    # un vendredi soir — un correctif de dépendance qui dégrade la production
+    # doit pouvoir être suivi pendant des heures ouvrées.
+
+    open-pull-requests-limit: 5
+    # Plafond volontairement bas. Au-delà, les PR s'accumulent sans être lues
+    # et l'automatisation produit du bruit plutôt que de la sécurité.
+
+    versioning-strategy: increase
+    labels:
+      - 'dependencies'
+      - 'area:api'
+    commit-message:
+      prefix: 'chore(deps)'
+      prefix-development: 'chore(deps-dev)'
+      include: 'scope'
+
+    groups:
+      # Correctifs et versions mineures de production : regroupés en une seule
+      # PR. Ce sont les montées à faible risque — les traiter une par une
+      # multiplierait les revues sans réduire le risque.
+      production-minor-patch:
+        applies-to: version-updates
+        dependency-type: 'production'
+        update-types: ['minor', 'patch']
+
+      # Outillage de développement : risque nul pour la production, regroupé
+      # plus largement (versions majeures incluses).
+      development:
+        applies-to: version-updates
+        dependency-type: 'development'
+        update-types: ['minor', 'patch', 'major']
+
+      # Correctifs de sécurité : groupe dédié pour être identifiables
+      # immédiatement et traités hors du cycle hebdomadaire normal.
+      security:
+        applies-to: security-updates
+        patterns: ['*']
+
+    ignore:
+      # Les montées majeures de dépendances de production ne passent jamais par
+      # une PR automatique : elles impliquent des changements incompatibles à
+      # évaluer, et une issue dédiée avec plan de test (cf. § 4 du processus).
+      - dependency-name: '*'
+        dependency-type: 'production'
+        update-types: ['version-update:semver-major']
+
+  # ─────────────────────────────────────────────────────────────
+  # Actions GitHub utilisées par la chaîne CI/CD
+  # ─────────────────────────────────────────────────────────────
+  # Souvent oubliées, alors qu'une action compromise s'exécute avec les secrets
+  # du dépôt — dont la clé de service Google Cloud. Surface d'attaque au moins
+  # aussi sensible que les dépendances applicatives.
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 3
+    labels:
+      - 'dependencies'
+      - 'area:cicd'
+      - 'security'
+    commit-message:
+      prefix: 'chore(ci)'
+    groups:
+      actions:
+        patterns: ['*']
+
+  # ─────────────────────────────────────────────────────────────
+  # Image de base Docker
+  # ─────────────────────────────────────────────────────────────
+  # `node:20-alpine` reçoit des correctifs de sécurité système qui ne sont
+  # visibles ni de `npm audit` ni de Dependabot npm.
+  - package-ecosystem: 'docker'
+    directory: '/server'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 2
+    labels:
+      - 'dependencies'
+      - 'area:cicd'
+      - 'security'
+    commit-message:
+      prefix: 'chore(docker)'
+    ignore:
+      # Node 20 est la version LTS ciblée, alignée avec la CI et Cloud Run.
+      # Un changement de version majeure est une décision d'architecture.
+      - dependency-name: 'node'
+        update-types: ['version-update:semver-major']

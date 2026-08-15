@@ -1,0 +1,152 @@
+name: "🐞 Anomalie technique"
+description: "Consigner une anomalie détectée en production, en recette ou en développement."
+title: "[ANO] "
+labels: ["bug", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Consignation d'une anomalie
+
+        Chaque champ de ce formulaire alimente directement la phase de **qualification**
+        décrite dans [`docs/PROCESSUS_ANOMALIES.md`](../../docs/PROCESSUS_ANOMALIES.md).
+        Une fiche incomplète ne peut pas être qualifiée : elle repart en demande
+        d'information et retarde d'autant le correctif.
+
+        > 💡 **Identifiant de corrélation** — toute réponse de l'API porte un en-tête
+        > `X-Request-Id`, et l'écran d'erreur de l'application affiche une référence
+        > `INC-…`. Renseignez-la : elle permet de retrouver en une requête la ligne de
+        > log serveur et l'événement de suivi d'erreurs correspondants.
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Sévérité
+      description: "Grille complète et délais associés : docs/PROCESSUS_ANOMALIES.md § Grille de sévérité"
+      options:
+        - "S1 — Critique : service indisponible, perte ou fuite de données"
+        - "S2 — Majeure : fonction clé inutilisable, pas de contournement"
+        - "S3 — Mineure : fonction dégradée, contournement possible"
+        - "S4 — Cosmétique : défaut d'affichage sans impact fonctionnel"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environnement
+      options:
+        - "Production (Cloud Run + Vercel)"
+        - "Recette / préproduction"
+        - "Développement local"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Composant concerné
+      options:
+        - "API — visuals-api (backend)"
+        - "Front — myvisuals-client (React)"
+        - "Base de données / Supabase (schéma, RLS, triggers)"
+        - "Stockage objet (buckets, URL signées)"
+        - "Chaîne CI/CD (build, tests, déploiement)"
+        - "Indéterminé"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: Canal de détection
+      description: "Comment l'anomalie est-elle remontée ? Alimente l'indicateur « part des anomalies détectées avant signalement client »."
+      options:
+        - "Supervision automatique (alerte Cloud Monitoring / Sentry / uptime check)"
+        - "Support client (signalement utilisateur)"
+        - "Chaîne d'intégration continue (test ou smoke test en échec)"
+        - "Recette interne / revue de code"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version déployée
+      description: "Résultat de `curl https://<api>/health` (champs `version` et `revision`), ou numéro du CHANGELOG."
+      placeholder: "visuals-api 1.5.2 — révision visuals-api-00042-abc"
+    validations:
+      required: true
+
+  - type: input
+    id: correlation
+    attributes:
+      label: Identifiant de corrélation
+      description: "En-tête `X-Request-Id` de la réponse fautive, ou référence `INC-…` affichée par l'application."
+      placeholder: "INC-260721-K3M9Q  /  X-Request-Id: 001cd632-8ad8-42d5-8e5a-eaf350b6c33c"
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: "Que se passe-t-il, en une à trois phrases factuelles ?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Étapes de reproduction
+      description: "Numérotées, depuis un état connu. Une anomalie non reproductible ne peut pas être corrigée avec certitude."
+      placeholder: |
+        1. Se connecter avec un compte Studio
+        2. Ouvrir le projet « Campagne Été »
+        3. Téléverser une nouvelle version d'un visuel existant
+        4. Observer la réponse de l'API
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportement attendu
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportement observé
+      description: "Message d'erreur exact, code HTTP, capture d'écran."
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs et traces
+      description: "Extrait Cloud Logging (filtré sur le requestId), console navigateur, lien Sentry. Collé tel quel."
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: "Combien d'utilisateurs, quels rôles, depuis quand ? Un contournement existe-t-il ?"
+      placeholder: "Tous les comptes Studio depuis le déploiement 1.5.0 (2026-07-22). Aucun contournement."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Vérifications préalables
+      options:
+        - label: "J'ai vérifié qu'aucune issue ouverte ne décrit déjà cette anomalie"
+          required: true
+        - label: "J'ai consulté `/health/ready` pour écarter une panne d'infrastructure"
+          required: false

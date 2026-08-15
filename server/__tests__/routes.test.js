@@ -4,6 +4,7 @@
  */
 const request = require('supertest');
 const app = require('../app');
+const pkg = require('../package.json');
 
 describe('API Routes Structure', () => {
     const apiRoutes = [
@@ -76,7 +77,10 @@ describe('Health Check Endpoint', () => {
         expect(res.body).toMatchObject({
             status: 'ok',
             message: 'Visuals.co API is running',
-            version: '1.0.0',
+            // Comparé à package.json et non à une constante : ce test figeait
+            // auparavant la version à '1.0.0', ce qui masquait la dérive entre
+            // le numéro publié et celui réellement servi par l'API.
+            version: pkg.version,
         });
         expect(res.body).toHaveProperty('timestamp');
     });

@@ -1,0 +1,106 @@
+name: "🎧 Demande de support client"
+description: "Signalement transmis par un utilisateur (studio ou client) via le support."
+title: "[SUP] "
+labels: ["support", "source:client", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Signalement utilisateur
+
+        Ce formulaire est rempli **par le support** à réception d'un signalement
+        (e-mail, téléphone, message dans l'application). Il ne préjuge pas de
+        l'existence d'un défaut logiciel : un signalement peut relever d'un
+        usage inattendu, d'une donnée mal saisie ou d'une attente non couverte
+        par le produit.
+
+        Si la qualification confirme un défaut, une issue **[ANO]** est créée et
+        liée à celle-ci. C'est ce lien qui matérialise la traçabilité
+        « signalement → anomalie → correctif → validation client ».
+
+        **Engagement de prise en charge** (accusé de réception) :
+        S1 : 1 h ouvrée · S2 : 4 h ouvrées · S3 : 1 j ouvré · S4 : 5 j ouvrés.
+
+  - type: input
+    id: reporter
+    attributes:
+      label: Demandeur
+      description: "Organisation et rôle. Pas de coordonnées personnelles dans le ticket (minimisation RGPD) — elles restent dans la boîte support."
+      placeholder: "Studio Lumière — compte Studio (propriétaire)"
+    validations:
+      required: true
+
+  - type: input
+    id: received_at
+    attributes:
+      label: Date et heure de réception
+      placeholder: "2026-07-20 14:32 (CEST)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: channel
+    attributes:
+      label: Canal d'entrée
+      options:
+        - "E-mail support"
+        - "Message dans l'application"
+        - "Téléphone"
+        - "Autre"
+    validations:
+      required: true
+
+  - type: textarea
+    id: verbatim
+    attributes:
+      label: Signalement (verbatim)
+      description: "Les mots de l'utilisateur, sans reformulation. La reformulation prématurée est une source classique de fausse piste."
+    validations:
+      required: true
+
+  - type: input
+    id: correlation
+    attributes:
+      label: Référence communiquée par l'utilisateur
+      description: "Référence `INC-…` affichée par l'application, ou horodatage précis à défaut."
+      placeholder: "INC-260720-A4T2X"
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte technique collecté
+      description: "Navigateur et version, rôle du compte, projet concerné, action en cours, capture d'écran."
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnosis
+    attributes:
+      label: Qualification effectuée
+      description: "Reproduction tentée ? Logs consultés ? Conclusion : défaut logiciel, usage inattendu, ou demande d'évolution ?"
+    validations:
+      required: false
+
+  - type: input
+    id: linked_issue
+    attributes:
+      label: Anomalie liée
+      description: "Numéro de l'issue [ANO] créée si un défaut est confirmé."
+      placeholder: "#12"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: closure
+    attributes:
+      label: Clôture
+      description: "Un ticket support ne se clôt pas sur le déploiement du correctif, mais sur la confirmation de l'utilisateur."
+      options:
+        - label: "Accusé de réception envoyé au demandeur"
+          required: false
+        - label: "Correctif déployé et version communiquée"
+          required: false
+        - label: "Résolution confirmée par l'utilisateur"
+          required: false

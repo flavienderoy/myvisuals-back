@@ -14,6 +14,7 @@ Ce projet a été réalisé par **Flavien Deroy** dans le cadre du **Titre RNCP 
 4. [Architecture & Base de Données](#-architecture--base-de-données)
 5. [Lancement du Projet en Local (Guide pour le Jury)](#-lancement-du-projet-en-local-guide-pour-le-jury)
 6. [Qualité, Tests & Sécurité](#-qualité-tests--sécurité)
+7. [Maintien en Condition Opérationnelle](#-maintien-en-condition-opérationnelle)
 
 ---
 
@@ -115,9 +116,59 @@ Vous pouvez vous créer un compte depuis l'interface ou utiliser les identifiant
 
 ### Assurance Qualité
 L'application est couverte par une **stratégie de tests complète** :
-- Tests unitaires Frontend (Vitest + React Testing Library).
-- Tests d'intégration API Backend (Supertest).
+- Tests unitaires Frontend (Vitest + React Testing Library) — **75 tests**.
+- Tests d'intégration API Backend (Supertest) — **90 tests**.
 - Tests End-to-End (E2E) simulants les parcours utilisateurs clés via **Playwright**.
+
+`npm audit` ne signale **aucune vulnérabilité** sur les deux dépôts, et le seuil
+`high` est bloquant en intégration continue.
+
+---
+
+## 🩺 Maintien en Condition Opérationnelle
+
+Le dispositif de supervision, de traitement des anomalies et de suivi des
+versions est documenté séparément.
+
+| Document | Objet |
+|---|---|
+| [`docs/SUPERVISION.md`](docs/SUPERVISION.md) | Périmètre supervisé, sondes, 12 indicateurs de suivi et leurs seuils, modalités d'alerte, mise en place opérationnelle |
+| [`docs/PROCESSUS_ANOMALIES.md`](docs/PROCESSUS_ANOMALIES.md) | Canaux de détection, grille de sévérité et délais d'engagement, cycle de vie d'un ticket, règles de correction |
+| [`docs/PROCESSUS_DEPENDANCES.md`](docs/PROCESSUS_DEPENDANCES.md) | Politique de mise à jour (correctif / mineure / majeure / sécurité), Dependabot, audit bloquant, procédure de retour arrière |
+| [`CHANGELOG.md`](CHANGELOG.md) | Journal de version (Keep a Changelog + SemVer), 9 versions publiées |
+| [`docs/anomalies/`](docs/anomalies/) | Fiches d'anomalies réelles traitées sur le projet |
+
+### Vérifier l'état du service
+
+```bash
+# Vivacité — sans entrée/sortie, utilisée par Cloud Run et le smoke test CI
+curl -s https://<api>/health | jq
+
+# Aptitude — interroge réellement PostgreSQL et le stockage objet
+curl -s https://<api>/health/ready | jq
+```
+
+Le champ `version` est lu depuis `package.json` : il indique avec certitude
+quelle version tourne en production, et un contrôle d'intégration continue
+(`scripts/check-changelog.cjs`) interdit toute divergence avec le journal.
+
+### Activer les sondes externes
+
+Le suivi d'erreurs est **conditionnel** : sans DSN configuré, l'application
+fonctionne à l'identique, sondes désactivées.
+
+| Variable | Portée | Effet |
+|---|---|---|
+| `SENTRY_DSN` | Cloud Run | Active la capture des 5xx et des exceptions non gérées côté API |
+| `VITE_SENTRY_DSN` | Vercel (au **build**) | Active la capture des exceptions React côté navigateur |
+
+### Anomalies documentées
+
+| Référence | Anomalie | Sév. | Détection |
+|---|---|---|---|
+| [ANO-2026-001](docs/anomalies/ANO-2026-001.md) | Conteneur en échec au démarrage après déploiement | S1 | Supervision |
+| [ANO-2026-002](docs/anomalies/ANO-2026-002.md) | Saturation du limiteur de débit sur le tableau de bord | S3 | Recette interne |
+| [ANO-2026-003](docs/anomalies/ANO-2026-003.md) | Inscription Studio créant un compte Client | S2 | Support client |
 
 ---
 *© 2026 Flavien Deroy — Projet RNCP Niveau 7*

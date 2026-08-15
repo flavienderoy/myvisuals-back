@@ -1,0 +1,21 @@
+# Les issues libres sont désactivées : toute anomalie doit passer par un
+# formulaire structuré, faute de quoi la phase de qualification repart en
+# demande d'information et le délai de correction s'allonge inutilement.
+blank_issues_enabled: false
+
+contact_links:
+  - name: 🔒 Vulnérabilité de sécurité
+    url: https://github.com/flavienderoy/myvisuals-back/security/advisories/new
+    about: >
+      Ne jamais déclarer une vulnérabilité dans une issue publique. Utilisez
+      l'avis de sécurité privé pour permettre une correction avant divulgation.
+
+  - name: 📈 Demande d'évolution
+    url: https://github.com/flavienderoy/myvisuals-back/discussions
+    about: >
+      Une fonctionnalité manquante n'est pas une anomalie. Les évolutions sont
+      arbitrées en revue de backlog, pas dans le flux de correction.
+
+  - name: 📚 Processus de traitement des anomalies
+    url: https://github.com/flavienderoy/myvisuals-back/blob/main/docs/PROCESSUS_ANOMALIES.md
+    about: Grille de sévérité, délais d'engagement et cycle de vie d'un ticket.
