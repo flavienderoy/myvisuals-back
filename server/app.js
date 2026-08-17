@@ -11,6 +11,7 @@ const rateLimit = require('express-rate-limit');
 const { initMonitoring } = require('./config/monitoring');
 const { notFoundHandler, errorHandler, registerProcessHandlers } = require('./middlewares/errorHandler');
 const requestId = require('./middlewares/requestId');
+const { logger } = require('./utils/logger');
 const httpLogger = require('./middlewares/httpLogger');
 
 initMonitoring();
@@ -54,13 +55,36 @@ app.set('trust proxy', 1);
 app.use(requestId);
 
 // ─── General Middleware ────────────────────────────────
+// Origines autorisées, normalisées.
+//
+// L'en-tête `Origin` d'un navigateur ne porte jamais de barre oblique finale.
+// Une variable d'environnement renseignée avec « https://exemple.app/ » ne
+// correspondait donc à aucune origine : le préflight répondait 204 sans
+// `Access-Control-Allow-Origin`, et toutes les requêtes du front étaient
+// bloquées — sans la moindre erreur côté serveur (ANO-2026-005).
+// On compare désormais des valeurs normalisées des deux côtés.
+const normalizeOrigin = (value) => (value || '').trim().replace(/\/+$/, '').toLowerCase();
+
+const ALLOWED_ORIGINS = [
+    process.env.CLIENT_URL,
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:5175',
+].filter(Boolean).map(normalizeOrigin);
+
 app.use(cors({
-    origin: [
-        process.env.CLIENT_URL,
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'http://localhost:5175'
-    ].filter(Boolean),
+    origin(origin, callback) {
+        // Absence d'Origin : appels serveur à serveur, sondes, curl. Autorisés.
+        if (!origin) return callback(null, true);
+
+        if (ALLOWED_ORIGINS.includes(normalizeOrigin(origin))) return callback(null, true);
+
+        // Refus journalisé : une origine rejetée est soit une tentative
+        // d'accès illégitime, soit une erreur de configuration. Sans cette
+        // trace, les deux sont indiscernables et parfaitement silencieuses.
+        logger.warn('cors.origin_rejected', { origin, allowed: ALLOWED_ORIGINS });
+        return callback(null, false);
+    },
     credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
