@@ -41,6 +41,9 @@ _Rien pour le moment._
   conséquence pour `SENTRY_DSN` — la leçon est désormais appliquée aux cinq
   variables du service.
 
+- **Séparateur de `--set-env-vars` remplacé** (`@` → `||`) : l'ancien figurait
+  dans le DSN Sentry lui-même (`https://clé@hôte/…`), gcloud découpait la valeur
+  et le déploiement échouait — bruyamment cette fois, grâce au garde-fou de 1.6.1.
 - Vérification : `GET /health/ready` expose `monitoring.errorTracking` — c'est ce
   champ qui a révélé la régression, et c'est lui qui atteste désormais l'état réel
   de la sonde après chaque déploiement. Une supervision qui rend compte

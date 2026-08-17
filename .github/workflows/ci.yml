@@ -209,14 +209,15 @@ jobs:
             --region "$GCP_REGION" --clear-secrets || true
 
           # Étape 2 : déploiement. Les valeurs passent par l'environnement du
-          # runner et non par interpolation directe dans la ligne de commande :
-          # une clé contenant une virgule ou un caractère spécial casserait le
-          # découpage de --set-env-vars.
+          # runner, et le séparateur de --set-env-vars est « || » : il doit être
+          # absent de TOUTES les valeurs. Le séparateur précédent, « @ »,
+          # figurait dans le DSN Sentry lui-même (https://clé@hôte/…) — gcloud
+          # découpait la clé en deux et le déploiement échouait.
           gcloud run deploy "$CLOUD_RUN_SERVICE" \
             --source ./server \
             --region "$GCP_REGION" \
             --allow-unauthenticated \
-            --set-env-vars "^@^NODE_ENV=production@CLIENT_URL=${CLIENT_URL}@SUPABASE_URL=${SUPABASE_URL}@SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}@SENTRY_DSN=${SENTRY_DSN}"
+            --set-env-vars "^||^NODE_ENV=production||CLIENT_URL=${CLIENT_URL}||SUPABASE_URL=${SUPABASE_URL}||SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}||SENTRY_DSN=${SENTRY_DSN}"
 
       # ── Vérification post-déploiement ────────────────────────────────────
       # Un déploiement « réussi » ne prouve que la mise en ligne du conteneur.
