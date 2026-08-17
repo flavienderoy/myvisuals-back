@@ -44,12 +44,20 @@ détectée tôt, moins elle coûte.
 | 2 | **Supervision automatique** | Uptime check, Cloud Monitoring, Sentry | 5–15 min | L'équipe |
 | 3 | **Recette interne** | Tests manuels, revue de code | heures | L'équipe |
 | 4 | **Support client** | Signalement utilisateur | variable | **L'utilisateur** |
+| 5 | **Constat fortuit** | Aucun outil | indéterminé | **Le hasard** |
 
 Le canal 4 est le plus coûteux : l'anomalie a déjà produit son effet, la
 confiance est déjà entamée, et le diagnostic dépend du récit d'un tiers.
 L'indicateur *part des anomalies détectées avant signalement client*
 (cible > 60 %, voir [SUPERVISION.md § 4](./SUPERVISION.md#4-indicateurs-de-suivi))
 mesure précisément le déplacement du canal 4 vers les canaux 1 à 3.
+
+Le canal 5 n'en est pas un : c'est l'aveu qu'aucun dispositif n'a fonctionné.
+Il a été ajouté au tableau après [ANO-2026-005](./anomalies/ANO-2026-005.md), une
+panne totale du front restée invisible **deux jours** de toutes les sondes — parce
+qu'aucune ne se comporte comme un navigateur. Le nommer plutôt que le taire est ce
+qui permet de le mesurer, et donc de le réduire : c'est l'objet de la
+recommandation R2.
 
 Chaque fiche porte un label `source:*` — c'est de là que vient la mesure.
 
@@ -206,6 +214,7 @@ pas été détecté plus tôt ? qu'est-ce qui empêchera sa récidive ?
 | [ANO-2026-002](./anomalies/ANO-2026-002.md) | Saturation du limiteur de débit sur le tableau de bord | S3 | Recette interne | ✅ Vérifiée |
 | [ANO-2026-003](./anomalies/ANO-2026-003.md) | Inscription Studio créant un compte Client | S2 | Support client | ✅ Vérifiée |
 | [ANO-2026-004](./anomalies/ANO-2026-004.md) | Les déploiements n'atteignaient pas le service de production | S1 | Supervision | 🟠 Correctif fusionné |
+| [ANO-2026-005](./anomalies/ANO-2026-005.md) | Front bloqué par la politique CORS après un correctif | S1 | Constat fortuit | ✅ Vérifiée |
 
 Modèle vierge : [`_TEMPLATE.md`](./anomalies/_TEMPLATE.md).
 

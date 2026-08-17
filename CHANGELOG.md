@@ -18,6 +18,43 @@ Versionnage : [Semantic Versioning](https://semver.org/lang/fr/) —
 
 ---
 
+## [Non publié]
+
+_Rien pour le moment._
+
+---
+
+## [1.6.2] — 2026-08-17
+
+### Corrigé
+
+- **ANO-2026-005 — Front-end intégralement bloqué par la politique CORS** (S1,
+  exposition ≈ 2 jours). `CLIENT_URL` portait une barre oblique finale, que
+  l'en-tête `Origin` d'un navigateur ne comporte jamais : la comparaison exacte
+  échouait, le préflight répondait 204 sans `Access-Control-Allow-Origin`, et
+  toutes les requêtes du front étaient rejetées. La valeur fautive provenait du
+  secret GitHub, appliqué pour la première fois par le correctif d'ANO-2026-004 :
+  **une régression introduite par un correctif**.
+- **Origines CORS normalisées des deux côtés de la comparaison** (slash terminal,
+  casse, espaces). Une erreur de saisie dans une variable d'environnement ne peut
+  plus rendre l'API inutilisable.
+- **Secret `CLIENT_URL` corrigé** en amont, sans quoi le déploiement suivant
+  aurait réintroduit le défaut.
+
+### Sécurité
+
+- **Rejets CORS journalisés** en `WARNING` avec l'origine refusée. Un rejet est
+  soit une tentative d'accès illégitime, soit une erreur de configuration :
+  sans trace, les deux étaient indiscernables et silencieux.
+
+### Tests
+
+- 6 cas de non-régression (`__tests__/cors.test.js`), dont le scénario exact du
+  défaut — `CLIENT_URL` renseignée **avec** le slash. Vérifiés par mutation :
+  la normalisation retirée, 2 tests échouent. Suite portée à **96 tests**.
+
+---
+
 ## [1.6.1] — 2026-08-15
 
 ### Corrigé
@@ -38,12 +75,6 @@ Versionnage : [Semantic Versioning](https://semver.org/lang/fr/) —
 - Les secrets transitent par l'environnement du runner, avec un séparateur
   personnalisé pour `--set-env-vars` : une clé contenant une virgule cassait
   silencieusement le découpage des variables.
-
----
-
-## [Non publié]
-
-_Rien pour le moment._
 
 ---
 
