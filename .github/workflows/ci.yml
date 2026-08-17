@@ -195,6 +195,13 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           CLIENT_URL: ${{ secrets.CLIENT_URL }}
+          # Optionnel : sans DSN, la sonde applicative est un no-op. Mais la
+          # variable doit figurer ici, car `--set-env-vars` est DÉCLARATIF :
+          # toute variable absente de la liste est SUPPRIMÉE du service. Une
+          # valeur posée à la main par `--update-env-vars` ne survit donc pas au
+          # déploiement suivant — c'est ce qui a effacé SENTRY_DSN une première
+          # fois, et la cause racine d'ANO-2026-005 sous une autre forme.
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
         run: |
           # Étape 1 : purge des secrets Secret Manager éventuellement rattachés
           # au service, pour éviter un conflit de type avec --set-env-vars.
@@ -209,7 +216,7 @@ jobs:
             --source ./server \
             --region "$GCP_REGION" \
             --allow-unauthenticated \
-            --set-env-vars "^@^NODE_ENV=production@CLIENT_URL=${CLIENT_URL}@SUPABASE_URL=${SUPABASE_URL}@SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}"
+            --set-env-vars "^@^NODE_ENV=production@CLIENT_URL=${CLIENT_URL}@SUPABASE_URL=${SUPABASE_URL}@SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}@SENTRY_DSN=${SENTRY_DSN}"
 
       # ── Vérification post-déploiement ────────────────────────────────────
       # Un déploiement « réussi » ne prouve que la mise en ligne du conteneur.

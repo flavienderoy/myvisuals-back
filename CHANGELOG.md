@@ -24,6 +24,30 @@ _Rien pour le moment._
 
 ---
 
+## [1.6.3] — 2026-08-17
+
+### Corrigé
+
+- **`SENTRY_DSN` effacée à chaque déploiement.** La variable avait été posée à la
+  main par `gcloud run services update --update-env-vars` ; le déploiement suivant,
+  qui utilise `--set-env-vars`, l'a supprimée. `--set-env-vars` est **déclaratif** :
+  toute variable absente de la liste est retirée du service. La supervision
+  applicative en production est ainsi repassée silencieusement à `disabled`.
+  `SENTRY_DSN` figure désormais dans la liste déclarative, alimentée par un secret
+  du dépôt.
+- C'est la **même cause racine qu'ANO-2026-005** sous une autre forme : une valeur
+  de configuration posée hors de la source de vérité ne survit pas au déploiement
+  suivant. Le correctif d'ANO-2026-005 documentait ce piège sans en tirer la
+  conséquence pour `SENTRY_DSN` — la leçon est désormais appliquée aux cinq
+  variables du service.
+
+- Vérification : `GET /health/ready` expose `monitoring.errorTracking` — c'est ce
+  champ qui a révélé la régression, et c'est lui qui atteste désormais l'état réel
+  de la sonde après chaque déploiement. Une supervision qui rend compte
+  d'elle-même est la seule qui puisse être vérifiée.
+
+---
+
 ## [1.6.2] — 2026-08-17
 
 ### Corrigé

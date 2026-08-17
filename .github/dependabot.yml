@@ -34,8 +34,9 @@ updates:
       - 'dependencies'
       - 'area:api'
     commit-message:
-      prefix: 'chore(deps)'
-      prefix-development: 'chore(deps-dev)'
+      # prefix 'chore' + include 'scope' → « chore(deps): … » / « chore(deps-dev): … ».
+      # Un prefix 'chore(deps)' combiné au scope produisait « chore(deps)(deps): ».
+      prefix: 'chore'
       include: 'scope'
 
     groups:
