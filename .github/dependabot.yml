@@ -61,11 +61,45 @@ updates:
         patterns: ['*']
 
     ignore:
-      # Les montées majeures de dépendances de production ne passent jamais par
-      # une PR automatique : elles impliquent des changements incompatibles à
-      # évaluer, et une issue dédiée avec plan de test (cf. § 4 du processus).
-      - dependency-name: '*'
-        dependency-type: 'production'
+      # Les montées MAJEURES des dépendances de production ne passent jamais par
+      # une pull request automatique : elles impliquent des changements
+      # incompatibles à évaluer, et passent par une issue dédiée avec plan de
+      # test (§ 4.3 du processus).
+      #
+      # Les dépendances sont énumérées nommément : le schéma Dependabot
+      # n'autorise PAS `dependency-type` dans un bloc `ignore`. Une première
+      # version de ce fichier l'utilisait — Dependabot rejetait alors
+      # l'intégralité de la configuration et ne produisait aucune pull request,
+      # sans que rien ne le signale hors de l'onglet Insights → Dependabot.
+      - dependency-name: '@sentry/node'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@supabase/supabase-js'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'archiver'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'cors'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'dotenv'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'express'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'express-rate-limit'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'helmet'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'morgan'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'multer'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'pg'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'sharp'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'swagger-jsdoc'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'swagger-ui-express'
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'uuid'
         update-types: ['version-update:semver-major']
 
   # ─────────────────────────────────────────────────────────────
