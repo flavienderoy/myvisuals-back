@@ -226,8 +226,11 @@ function tokenizeCode(line, lang) {
 
 // ─── Gabarit HTML ─────────────────────────────────────────
 const LINE_H = 20.3;
-const HEADER = 78;
-const PAD = 120;
+// Hauteur = barre de titre + marges (corps 2×12 + pre 18/22) + lignes.
+// Ces valeurs suivent le gabarit ci-dessous : les surestimer laisse une bande
+// vide sous le code, coûteuse en place dans un document paginé.
+const HEADER = 42;
+const PAD = 64;
 const height = Math.ceil(HEADER + PAD + allLines.length * LINE_H);
 
 const rows = allLines
@@ -239,16 +242,16 @@ const rows = allLines
 
 const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>${esc(title)}</title>
 <style>
-:root{--bg:#0d1117;--chrome:#161b22;--border:#30363d;--text:#e6edf3;--comment:#8b949e;
+:root{--bg:#0F0F0E;--chrome:#1A1A1A;--border:#39352A;--text:#e6edf3;--comment:#8b949e;
 --key:#79c0ff;--string:#a5d6ff;--num:#ffa657;--punct:#c9d1d9;--kw:#ff7b72;--fn:#d2a8ff;
---lit:#79c0ff;--gutter:#6e7681;--ok:#3fb950;--err:#f85149;--warn:#d29922;--prompt:#7ee787;}
+--lit:#79c0ff;--gutter:#7A756A;--ok:#3fb950;--err:#f85149;--warn:#d29922;--prompt:#7ee787;}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#1c2128;padding:40px;font-family:ui-sans-serif,-apple-system,system-ui,sans-serif;display:flex;justify-content:center}
-.window{width:${width - 80}px;background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+body{background:#111110;padding:12px;font-family:ui-sans-serif,-apple-system,system-ui,sans-serif;display:flex;justify-content:center}
+.window{width:${width - 80}px;background:var(--bg);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:none}
 .titlebar{background:var(--chrome);border-bottom:1px solid var(--border);padding:11px 16px;display:flex;align-items:center;gap:12px}
 .dots{display:flex;gap:7px}.dot{width:11px;height:11px;border-radius:50%}
 .r{background:#ff5f57}.y{background:#febc2e}.g{background:#28c840}
-.filename{color:var(--text);font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12.5px}
+.filename{color:#D4AF37;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12.5px}
 .repo{margin-left:auto;color:var(--comment);font-size:11.5px;font-family:ui-monospace,"SF Mono",Menlo,monospace}
 pre{margin:0;padding:18px 0 22px;font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;line-height:${LINE_H}px;color:var(--text);overflow:hidden}
 .line{display:block;padding-right:20px;white-space:pre}
