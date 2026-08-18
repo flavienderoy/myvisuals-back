@@ -144,8 +144,20 @@ function tokenize(line, lang) {
 }
 
 function colorValue(v) {
+    const t = v.trim();
+
+    // Une valeur entre guillemets doubles est une chaîne entière : ne rien
+    // colorer à l'intérieur. Sans cette garde, les apostrophes du français
+    // (« l'anomalie ») étaient prises pour des délimiteurs de chaîne et le
+    // texte se retrouvait tronçonné par des balises parasites.
+    if (t.startsWith('"')) return esc(v);
+
+    // Idem pour une valeur entre apostrophes simples : on colore le tout.
+    if (t.startsWith("'") && t.endsWith("'") && t.length > 1) {
+        return esc(v.slice(0, v.indexOf("'"))) + `<span class="s">${esc(t)}</span>`;
+    }
+
     return esc(v)
-        .replace(/(&#39;|')([^']*)('|&#39;)/g, '<span class="s">\'$2\'</span>')
         .replace(/("(?:[^"\\]|\\.)*")/g, '<span class="s">$1</span>')
         .replace(/(?<![\w\-.])(\d+(?:\.\d+)*)(?![\w\-])/g, '<span class="n">$1</span>')
         .replace(/([[\],{}])/g, '<span class="p">$1</span>');
