@@ -52,13 +52,17 @@ Le dossier ne contient aucune affirmation non vérifiable. Tout provient de :
 - [`CHANGELOG.md`](../../CHANGELOG.md) — § 7
 - Les [issues](https://github.com/flavienderoy/myvisuals-back/issues?q=is%3Aissue) #1, #2, #6, #7, #8
 
-## Figures en attente
+## Figures produites hors dépôt
 
-Deux emplacements sont réservés dans le PDF, en attente des captures :
+Trois figures viennent de sources qui exigent une session authentifiée et ne peuvent donc pas être
+régénérées par script :
 
-| Réf. | Contenu | Prérequis |
+| Réf. | Contenu | Origine |
 |---|---|---|
-| Figure 7 | Moniteur UptimeRobot et son historique | Créer le moniteur sur `/health/ready` |
-| Figure 8 | Politiques d'alerte Cloud Monitoring | Créer les politiques de seuil |
+| `F16.png` | Erreur captée par la sonde front | Capture Sentry, projet `javascript-client` |
+| `F17.png` | Notification d'alerte reçue | E-mail Google Cloud Monitoring du 21 août 2026 |
+| `F12.png` | Fiche de consignation ANO-2026-001 | Page publique de l'issue GitHub #1 |
 
-Elles correspondent à la recommandation **R6** du § 8.
+Les deux premières sont des recompositions serrées de captures d'écran : les originaux font plus de
+1 200 px de large et deviennent illisibles une fois réduits à la largeur d'une page. Le recadrage
+conserve les zones qui portent la preuve.
