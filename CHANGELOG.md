@@ -43,6 +43,15 @@ _Rien pour le moment._
   ne suffit pas : supabase-js garde la session en mémoire même sans
   persistance, d'où l'isolement.
 
+### Sécurité
+
+- **Dépendances mises à jour** après la publication de vulnérabilités de
+  niveau « high » : `multer` 2.4.0 (déni de service, contournement de la limite
+  de taille), `sharp` 0.35.4 (libheif), `js-yaml` 4.3.2, `fast-uri` 3.1.8, ainsi
+  que `qs` et `morgan` (niveau « moderate »). Mises à jour dans les plages déjà
+  déclarées, sans changement majeur. L'audit bloquant de la CI refusait le
+  déploiement de ce correctif tant qu'elles restaient en place.
+
 ### Tests
 
 - 2 cas de non-régression (`__tests__/authSession.test.js`) : la connexion ne
