@@ -215,6 +215,7 @@ pas été détecté plus tôt ? qu'est-ce qui empêchera sa récidive ?
 | [ANO-2026-003](./anomalies/ANO-2026-003.md) | Inscription Studio créant un compte Client | S2 | Support client | ✅ Vérifiée |
 | [ANO-2026-004](./anomalies/ANO-2026-004.md) | Les déploiements n'atteignaient pas le service de production | S1 | Supervision | 🟠 Correctif fusionné |
 | [ANO-2026-005](./anomalies/ANO-2026-005.md) | Front bloqué par la politique CORS après un correctif | S1 | Constat fortuit | ✅ Vérifiée |
+| [ANO-2026-006](./anomalies/ANO-2026-006.md) | Requêtes exécutées avec les droits du dernier utilisateur connecté | S1 | Recette interne | 🟢 Corrigée |
 
 Modèle vierge : [`_TEMPLATE.md`](./anomalies/_TEMPLATE.md).
 

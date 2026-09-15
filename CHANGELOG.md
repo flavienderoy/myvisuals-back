@@ -24,6 +24,33 @@ _Rien pour le moment._
 
 ---
 
+## [1.6.4] — 2026-09-15
+
+### Corrigé
+
+- **ANO-2026-006 — Requêtes de l'API exécutées avec les droits du dernier
+  utilisateur connecté** (S1). `POST /api/auth/login` appelait
+  `signInWithPassword` sur le client Supabase partagé par toute l'API.
+  supabase-js conserve alors la session en mémoire et envoie le jeton de cet
+  utilisateur à la place de la clé `service_role` : chaque requête suivante,
+  quel que soit son auteur, passait sous les politiques RLS du dernier compte
+  connecté. Symptômes : création d'entreprise refusée (« new row violates
+  row-level security policy »), commentaires impossibles à valider (404),
+  messages impossibles à envoyer (500), dès que deux comptes se connectent.
+- **Connexion isolée sur un client jetable**, créé pour la seule requête de
+  login. Le client partagé ne conserve ni ne rafraîchit plus aucune session
+  (`persistSession: false`, `autoRefreshToken: false`). Seul ce dernier réglage
+  ne suffit pas : supabase-js garde la session en mémoire même sans
+  persistance, d'où l'isolement.
+
+### Tests
+
+- 2 cas de non-régression (`__tests__/authSession.test.js`) : la connexion ne
+  touche jamais le client partagé. Vérifiés par mutation : l'ancien code du
+  login restauré, le test échoue. Suite portée à **98 tests**.
+
+---
+
 ## [1.6.3] — 2026-08-17
 
 ### Corrigé

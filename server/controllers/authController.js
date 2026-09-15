@@ -140,7 +140,11 @@ exports.login = async (req, res) => {
   }
 
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    // Client jetable : supabase-js garde en mémoire la session ouverte par
+    // signInWithPassword, puis envoie le jeton de cet utilisateur à la place de
+    // la clé service_role. Sur le client partagé, toutes les requêtes de l'API
+    // s'exécuteraient ensuite avec les droits RLS du dernier utilisateur connecté.
+    const { data, error } = await supabase.createServerClient().auth.signInWithPassword({
       email,
       password
     });
