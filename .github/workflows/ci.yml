@@ -30,8 +30,8 @@ jobs:
     name: 🔍 Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: 'npm'
@@ -52,8 +52,8 @@ jobs:
     name: 📓 Journal de version & audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: 'npm'
@@ -89,8 +89,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: 'npm'
@@ -114,7 +114,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build Docker image
         working-directory: ./server
         run: docker build -t visuals-api:ci .
@@ -155,7 +155,7 @@ jobs:
     needs: [docker, governance]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # ── Garde-fou : ne jamais déployer avec une configuration incomplète ──
       # `--set-env-vars` est *déclaratif* : un secret absent est injecté en
@@ -184,11 +184,11 @@ jobs:
           echo "✅ Les trois secrets requis sont présents."
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
 
       - name: Build & Deploy to Cloud Run
         env:
